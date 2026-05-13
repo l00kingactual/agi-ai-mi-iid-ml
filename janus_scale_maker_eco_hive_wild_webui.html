@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Janus Bee Scale Maker + Eco-Hive Colony WebUI</title>
+<style>
+:root{
+  --bg:#07111f;--panel:#0f172a;--card:rgba(255,255,255,.065);--line:rgba(255,255,255,.14);
+  --text:#edf5ff;--muted:#a8b7ce;--gold:#f2c94c;--green:#22c55e;--blue:#3b82f6;--red:#ef4444;
+}
+*{box-sizing:border-box}
+body{margin:0;width:100vw;height:100vh;overflow:hidden;background:#dff4dc;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+#app{display:grid;grid-template-columns:1fr 455px;height:100vh;width:100vw}
+#stage{position:relative;min-width:0;min-height:0}
+canvas{display:block;width:100%;height:100%;background:#e8f7e6}
+aside{background:linear-gradient(180deg,rgba(9,16,29,.98),rgba(8,13,24,.98));border-left:1px solid var(--line);overflow:auto;padding:14px}
+h1{font-size:18px;margin:0 0 6px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#dbeafe;margin:18px 0 8px}
+h3{font-size:12px;color:#fef3c7;margin:10px 0 6px}
+.small{font-size:11px;color:var(--muted);line-height:1.45}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+label{display:block;font-size:11px;color:#e2e8f0;margin-top:8px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+select,input[type=file],button{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:8px;font:inherit;font-size:11px}
+option{color:#111827}
+button{cursor:pointer;background:rgba(242,201,76,.16);border-color:rgba(242,201,76,.35)}
+button:hover{background:rgba(242,201,76,.28)}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;font-size:11px;margin:6px 0}
+.row span:last-child{color:#fef3c7}
+.bar{height:7px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;margin:3px 0 6px}
+.bar>div{height:100%;background:linear-gradient(90deg,#f2c94c,#f97316);width:0%}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kpi div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);border-radius:10px;padding:7px;text-align:center}
+.kpi b{display:block;color:#fef3c7;font-size:15px}
+.legend{display:grid;grid-template-columns:24px 1fr auto;gap:7px;align-items:center;font-size:11px;margin:5px 0}
+.ico{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
+.pill{display:inline-block;padding:2px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);font-size:10px;margin:2px}
+#hud{position:absolute;left:12px;top:12px;min-width:420px;background:rgba(255,255,255,.92);color:#111827;border:1px solid #d0d5dd;border-radius:14px;padding:10px 12px;font-size:12px;line-height:1.45;box-shadow:0 10px 25px rgba(15,23,42,.18);pointer-events:none}
+#help{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.9);border:1px solid #d0d5dd;border-radius:14px;color:#111827;padding:8px 10px;font-size:11px;pointer-events:none}
+@media(max-width:1120px){#app{grid-template-columns:1fr}aside{height:48vh}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="world"></canvas>
+    <div id="hud"></div>
+    <div id="help">SPACE pause · R reset · mouse wheel zoom · drag pan · WILD button spreads meadows and bees</div>
+  </div>
+  <aside>
+    <h1>🐝 Janus Scale Maker + Eco-Hive Colony</h1>
+    <div class="small">A wild-spread apiary simulator: scale ruler, eco-hive colony interior, dispersed forage, long bee routes, honey/pollen/brood economy.</div>
+
+    <h2>Run / export</h2>
+    <div class="card">
+      <div class="grid2">
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset</button>
+        <button id="snapshotBtn">PNG snapshot</button>
+        <button id="saveBtn">Save JSON</button>
+      </div>
+      <label>Load JSON state</label>
+      <input id="loadFile" type="file" accept=".json,application/json"/>
+    </div>
+
+    <h2>Scale maker</h2>
+    <div class="card">
+      <label>Scale preset</label>
+      <select id="scalePreset">
+        <option value="garden">garden: 250 m square</option>
+        <option value="apiary">apiary: 750 m square</option>
+        <option value="farm" selected>farm: 1.5 km square</option>
+        <option value="wild">wild valley: 3 km square</option>
+      </select>
+      <div class="grid2">
+        <div><label>World size metres <span id="worldMVal"></span></label><input id="worldMRange" type="range" min="150" max="4000" step="10" value="1500"/></div>
+        <div><label>Visual scale px/m <span id="pxMVal"></span></label><input id="pxMRange" type="range" min="0.03" max="1.6" step="0.01" value="0.28"/></div>
+        <div><label>Grid interval m <span id="gridMVal"></span></label><input id="gridMRange" type="range" min="25" max="500" step="5" value="100"/></div>
+        <div><label>Ruler length m <span id="rulerMVal"></span></label><input id="rulerMRange" type="range" min="25" max="1000" step="5" value="250"/></div>
+      </div>
+      <div id="scaleOut" class="small" style="margin-top:8px"></div>
+    </div>
+
+    <h2>Wild spread layout</h2>
+    <div class="card">
+      <div class="grid3">
+        <button id="layoutWildBtn">Wild spread</button>
+        <button id="layoutEdgeBtn">Field edges</button>
+        <button id="layoutClusterBtn">Clustered</button>
+      </div>
+      <div class="grid2">
+        <div><label>Meadow count <span id="fieldsVal"></span></label><input id="fieldsRange" type="range" min="8" max="120" value="44"/></div>
+        <div><label>Spread radius m <span id="spreadMVal"></span></label><input id="spreadMRange" type="range" min="100" max="1800" step="10" value="900"/></div>
+        <div><label>Forage patch size m <span id="patchMVal"></span></label><input id="patchMRange" type="range" min="8" max="90" step="1" value="38"/></div>
+        <div><label>Route looseness <span id="wildnessVal"></span></label><input id="wildnessRange" type="range" min="0" max="1" step="0.01" value="0.78"/></div>
+      </div>
+    </div>
+
+    <h2>Eco-hive colony</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Bee population <span id="populationVal"></span></label><input id="populationRange" type="range" min="5000" max="80000" step="500" value="42000"/></div>
+        <div><label>Visible bees <span id="visibleBeesVal"></span></label><input id="visibleBeesRange" type="range" min="40" max="1000" value="360"/></div>
+        <div><label>Eco-hive radius m <span id="hiveRadiusVal"></span></label><input id="hiveRadiusRange" type="range" min="100" max="1800" step="10" value="850"/></div>
+        <div><label>Hive shelter effect <span id="shelterVal"></span></label><input id="shelterRange" type="range" min="0" max="1" step="0.01" value="0.82"/></div>
+        <div><label>Queen strength <span id="queenVal"></span></label><input id="queenRange" type="range" min="0" max="1" step="0.01" value="0.88"/></div>
+        <div><label>Brood comb capacity <span id="broodCapVal"></span></label><input id="broodCapRange" type="range" min="0" max="1" step="0.01" value="0.74"/></div>
+      </div>
+    </div>
+
+    <h2>Colony roles</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Scouts <span id="scoutVal"></span></label><input id="scoutRange" type="range" min="0" max="1" step="0.01" value="0.22"/></div>
+        <div><label>Foragers <span id="foragerVal"></span></label><input id="foragerRange" type="range" min="0" max="1" step="0.01" value="0.48"/></div>
+        <div><label>Nurses <span id="nurseVal"></span></label><input id="nurseRange" type="range" min="0" max="1" step="0.01" value="0.18"/></div>
+        <div><label>Guards <span id="guardVal"></span></label><input id="guardRange" type="range" min="0" max="1" step="0.01" value="0.07"/></div>
+        <div><label>Drones <span id="droneVal"></span></label><input id="droneRange" type="range" min="0" max="1" step="0.01" value="0.05"/></div>
+        <div><label>Wild drift <span id="driftVal"></span></label><input id="driftRange" type="range" min="0" max="1" step="0.01" value="0.60"/></div>
+      </div>
+    </div>
+
+    <h2>Flower / pollen sources</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Wildflower meadow <span id="wildflowerVal"></span></label><input id="wildflowerRange" type="range" min="0" max="1" step="0.01" value="0.36"/></div>
+        <div><label>Legume clover/vetch <span id="legumeVal"></span></label><input id="legumeRange" type="range" min="0" max="1" step="0.01" value="0.20"/></div>
+        <div><label>Herb borage/phacelia <span id="herbVal"></span></label><input id="herbRange" type="range" min="0" max="1" step="0.01" value="0.16"/></div>
+        <div><label>Orchard edge <span id="orchardVal"></span></label><input id="orchardRange" type="range" min="0" max="1" step="0.01" value="0.12"/></div>
+        <div><label>Late ivy/heather <span id="autumnVal"></span></label><input id="autumnRange" type="range" min="0" max="1" step="0.01" value="0.10"/></div>
+        <div><label>Low-value grass/corn <span id="grassVal"></span></label><input id="grassRange" type="range" min="0" max="1" step="0.01" value="0.06"/></div>
+      </div>
+    </div>
+
+    <h2>Weather / ecology</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Temperature <span id="tempVal"></span></label><input id="tempRange" type="range" min="-5" max="40" step="0.1" value="19"/></div>
+        <div><label>Rain <span id="rainVal"></span></label><input id="rainRange" type="range" min="0" max="1" step="0.01" value="0.08"/></div>
+        <div><label>Water access <span id="waterVal"></span></label><input id="waterRange" type="range" min="0" max="1" step="0.01" value="0.92"/></div>
+        <div><label>Disease pressure <span id="diseaseVal"></span></label><input id="diseaseRange" type="range" min="0" max="1" step="0.01" value="0.14"/></div>
+      </div>
+    </div>
+
+    <h2>Live metrics</h2>
+    <div class="card">
+      <div class="kpi" id="kpis"></div>
+      <div id="metrics"></div>
+    </div>
+
+    <h2>Key</h2>
+    <div class="card" id="legend"></div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+
+const TAU=Math.PI*2;
+const canvas=document.getElementById("world"), ctx=canvas.getContext("2d");
+const hud=document.getElementById("hud"), metricsEl=document.getElementById("metrics"), kpis=document.getElementById("kpis"), legendEl=document.getElementById("legend");
+
+const POLLEN={
+  wildflower:{label:"wildflower meadow",icon:"🌼",color:"#ec4899",nectar:.82,pollen:.92,nutrition:.92,diversity:1.00,months:[4,5,6,7,8,9,10]},
+  legume:{label:"clover/vetch/alfalfa",icon:"☘️",color:"#22c55e",nectar:.94,pollen:.78,nutrition:.84,diversity:.62,months:[5,6,7,8,9]},
+  herb:{label:"borage/phacelia/lavender",icon:"💜",color:"#7c3aed",nectar:.97,pollen:.72,nutrition:.78,diversity:.74,months:[5,6,7,8,9]},
+  orchard:{label:"apple/pear/cherry edge",icon:"🌸",color:"#ff8ab3",nectar:.62,pollen:.80,nutrition:.76,diversity:.58,months:[4,5]},
+  autumn:{label:"ivy/heather late forage",icon:"🍂",color:"#16a34a",nectar:.76,pollen:.78,nutrition:.70,diversity:.48,months:[8,9,10,11]},
+  grass:{label:"grass/corn wind pollen",icon:"🌾",color:"#a3a3a3",nectar:.06,pollen:.25,nutrition:.26,diversity:.18,months:[6,7,8,9]}
+};
+const BEE_COLORS={scout:"#f2c94c",forager:"#3b82f6",nurse:"#22c55e",guard:"#ef4444",drone:"#a855f7"};
+const state={
+  paused:false,layout:"wild",scalePreset:"farm",worldM:1500,pxM:.28,gridM:100,rulerM:250,
+  fieldsRequested:44,spreadM:900,patchM:38,wildness:.78,
+  population:42000,visibleBees:360,hiveRadius:850,shelter:.82,queen:.88,broodCap:.74,
+  roles:{scout:.22,forager:.48,nurse:.18,guard:.07,drone:.05,drift:.60},
+  pollenWeights:{wildflower:.36,legume:.20,herb:.16,orchard:.12,autumn:.10,grass:.06},
+  weather:{temp:19,rain:.08,water:.92,disease:.14},
+  zoom:1,panX:0,panY:0,drag:false,dx:0,dy:0,elapsedDays:0,daysPerSecond:.35,
+  ecoHive:{x:0,y:0,storedHoney:0,storedPollen:0,brood:0.42,health:1,pallets:0,combTemp:34.5,ventilation:.6},
+  fields:[],bees:[],pallets:[],stats:{honey:0,pollen:0,pollination:0,diversity:0,wildSpread:0}
+};
+
+function clamp(v,a=0,b=1){return Math.max(a,Math.min(b,v))}
+function rand(a,b){return a+Math.random()*(b-a)}
+function lerp(a,b,t){return a+(b-a)*t}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function screen(){return canvas.getBoundingClientRect()}
+function resize(){const r=screen(),d=Math.max(1,devicePixelRatio||1);canvas.width=Math.floor(r.width*d);canvas.height=Math.floor(r.height*d);ctx.setTransform(d,0,0,d,0,0)}
+addEventListener("resize",resize);resize();
+function w2s(p){const r=screen();return{x:r.width/2+(p.x+state.panX)*state.zoom*state.pxM,y:r.height/2+(p.y+state.panY)*state.zoom*state.pxM}}
+function s2w(x,y){const r=screen();return{x:(x-r.width/2)/(state.zoom*state.pxM)-state.panX,y:(y-r.height/2)/(state.zoom*state.pxM)-state.panY}}
+
+function month(){return 7}
+function flowering(cls){return POLLEN[cls].months.includes(month())}
+function weatherFactor(){return clamp(((state.weather.temp-7)/15)*(1-state.weather.rain*.85)*state.weather.water)}
+function normalizeRoles(){
+  const r=state.roles, total=Math.max(.001,r.scout+r.forager+r.nurse+r.guard+r.drone);
+  return{scout:r.scout/total,forager:r.forager/total,nurse:r.nurse/total,guard:r.guard/total,drone:r.drone/total,drift:r.drift};
+}
+function normalizePollenWeights(){
+  const s=Object.values(state.pollenWeights).reduce((a,b)=>a+b,0)||1;
+  for(const k of Object.keys(state.pollenWeights))state.pollenWeights[k]/=s;
+}
+function weightedPollen(){
+  normalizePollenWeights();
+  let p=Math.random();
+  for(const [k,v] of Object.entries(state.pollenWeights)){p-=v;if(p<=0)return k}
+  return "wildflower";
+}
+function fieldScore(f){
+  const p=POLLEN[f.kind];
+  return clamp((.45*p.nectar+.35*p.pollen+.20*p.nutrition)*(flowering(f.kind)?1:.08)*(1-f.depleted));
+}
+function createFields(){
+  const arr=[];
+  const maxR=state.spreadM;
+  for(let i=0;i<state.fieldsRequested;i++){
+    const kind=weightedPollen();
+    let x,y;
+    if(state.layout==="cluster"){
+      const clusterAngle=TAU*(i%5)/5;
+      const cx=Math.cos(clusterAngle)*maxR*.38, cy=Math.sin(clusterAngle)*maxR*.38;
+      x=cx+rand(-state.patchM*4,state.patchM*4); y=cy+rand(-state.patchM*4,state.patchM*4);
+    }else if(state.layout==="edge"){
+      const side=i%4, edge=maxR*.72, offset=rand(-edge,edge);
+      if(side===0){x=-edge;y=offset}else if(side===1){x=edge;y=offset}else if(side===2){x=offset;y=-edge}else{x=offset;y=edge}
+      x+=rand(-50,50); y+=rand(-50,50);
+    }else{
+      const a=rand(0,TAU), r=Math.sqrt(Math.random())*maxR;
+      x=Math.cos(a)*r; y=Math.sin(a)*r;
+    }
+    arr.push({id:`patch-${i}`,kind,x,y,r:state.patchM*rand(.65,1.55),pollination:0,depleted:0});
+  }
+  return arr;
+}
+function randomFieldTarget(role="forager"){
+  let bag=[],total=0;
+  for(const f of state.fields){
+    let w=fieldScore(f)+.02;
+    if(role==="scout")w+=state.wildness*.14;
+    bag.push([w,f]);total+=w;
+  }
+  let pick=Math.random()*total,sel=bag[0]?.[1]||{x:0,y:0,r:10,kind:"wildflower"};
+  for(const [w,f] of bag){pick-=w;if(pick<=0){sel=f;break}}
+  const a=rand(0,TAU),r=Math.random()*sel.r;
+  return{x:sel.x+Math.cos(a)*r,y:sel.y+Math.sin(a)*r,field:sel.id};
+}
+function createBees(){
+  const roles=normalizeRoles();
+  const arr=[];
+  for(let i=0;i<state.visibleBees;i++){
+    let p=Math.random(),role="forager";
+    for(const k of ["scout","forager","nurse","guard","drone"]){p-=roles[k];if(p<=0){role=k;break}}
+    const h=state.ecoHive;
+    const t=(role==="nurse"||role==="guard"||role==="drone")?{x:h.x+rand(-18,18),y:h.y+rand(-18,18)}:randomFieldTarget(role);
+    arr.push({id:`bee-${i}`,role,x:h.x+rand(-18,18),y:h.y+rand(-18,18),vx:0,vy:0,targetX:t.x,targetY:t.y,nectar:0,pollen:0,lastPatch:null,wing:rand(0,TAU),energy:rand(.72,1)});
+  }
+  return arr;
+}
+function resetStats(){state.stats={honey:0,pollen:0,pollination:0,diversity:0,wildSpread:0};state.ecoHive.storedHoney=0;state.ecoHive.storedPollen=0;state.ecoHive.brood=.42;state.ecoHive.health=1;state.ecoHive.pallets=0;state.pallets=[]}
+function resetWorld(){resetStats();state.fields=createFields();state.bees=createBees();syncLabels()}
+function updateEcoHive(dtDays){
+  const pollenProfile=globalPollenProfile();
+  const disease=clamp(state.weather.disease*(1-pollenProfile.nutrition*.35)+pollenProfile.grass*.18);
+  const nurseBoost=normalizeRoles().nurse;
+  const broodGrowth=clamp(state.queen*.35+state.broodCap*.25+pollenProfile.nutrition*.25+nurseBoost*.15-disease*.25);
+  state.ecoHive.brood=clamp(state.ecoHive.brood+dtDays*(broodGrowth-.45)*.018);
+  state.ecoHive.health=clamp(state.ecoHive.health+dtDays*(pollenProfile.nutrition*.006-disease*.008+state.shelter*.002));
+  state.ecoHive.combTemp=lerp(state.ecoHive.combTemp,34.5+state.weather.temp*.02-state.weather.rain*.4+state.shelter*.2,0.03);
+  state.ecoHive.ventilation=clamp(.35+state.roles.guard*.2+state.shelter*.35+state.weather.temp/80);
+  while(state.ecoHive.storedHoney>=400){
+    state.ecoHive.storedHoney-=400; state.ecoHive.pallets++;
+    state.pallets.push({x:state.ecoHive.x+45+state.ecoHive.pallets*12,y:state.ecoHive.y-45,liters:400});
+  }
+}
+function globalPollenProfile(){
+  const used={};let total=0,nut=0,grass=0;
+  for(const f of state.fields){
+    const amount=.05+f.pollination;
+    total+=amount;used[f.kind]=(used[f.kind]||0)+amount;nut+=POLLEN[f.kind].nutrition*amount;if(f.kind==="grass")grass+=amount;
+  }
+  const entropy=Object.values(used).reduce((a,v)=>{const p=v/(total||1);return a-p*Math.log(p||1)},0)/Math.log(Object.keys(POLLEN).length);
+  return{nutrition:clamp(nut/(total||1)),diversity:clamp(entropy),grass:clamp(grass/(total||1))};
+}
+function updateBees(dt,dtDays){
+  const roles=normalizeRoles();
+  for(const b of state.bees){
+    const h=state.ecoHive;
+    if(b.role==="nurse"){
+      b.targetX=h.x+rand(-22,22);b.targetY=h.y+rand(-22,22);
+      state.ecoHive.brood=clamp(state.ecoHive.brood+dtDays*.0005);
+    }else if(b.role==="guard"){
+      const a=performance.now()*.0003+(parseInt(b.id.replace(/\D/g,""))||0);
+      b.targetX=h.x+Math.cos(a)*45;b.targetY=h.y+Math.sin(a)*45;
+    }else if(b.role==="drone"){
+      const a=performance.now()*.00012+(parseInt(b.id.replace(/\D/g,""))||0);
+      b.targetX=h.x+Math.cos(a)*state.hiveRadius*.20;b.targetY=h.y+Math.sin(a)*state.hiveRadius*.20;
+    }
+    let dx=b.targetX-b.x,dy=b.targetY-b.y,d=Math.hypot(dx,dy)||1;
+    if(d<Math.max(5,state.patchM*.25)){
+      const patch=state.fields.find(f=>dist(b,f)<f.r*1.15);
+      if(patch && (b.role==="scout"||b.role==="forager")){
+        const p=POLLEN[patch.kind],score=fieldScore(patch);
+        b.nectar=clamp(b.nectar+dtDays*score*.30); b.pollen=clamp(b.pollen+dtDays*p.nutrition*.18);
+        patch.pollination=clamp(patch.pollination+dtDays*score*.10);
+        patch.depleted=clamp(patch.depleted+dtDays*.0015*(state.visibleBees/300));
+        state.stats.pollination+=dtDays*score*.02;
+        if(b.lastPatch && b.lastPatch!==patch.id)state.stats.diversity=clamp(state.stats.diversity+dtDays*.003);
+        b.lastPatch=patch.id;
+      }
+      if((b.nectar>.75||b.pollen>.70||Math.random()<.14) && (b.role==="scout"||b.role==="forager")){
+        b.targetX=h.x+rand(-18,18);b.targetY=h.y+rand(-18,18);
+        state.ecoHive.storedHoney+=b.nectar*0.030*state.population/Math.max(1,state.visibleBees)*weatherFactor();
+        state.ecoHive.storedPollen+=b.pollen*0.012*state.population/Math.max(1,state.visibleBees);
+        state.stats.honey=state.ecoHive.storedHoney;state.stats.pollen=state.ecoHive.storedPollen;
+        b.nectar=0;b.pollen=0;
+      }else if(b.role==="scout"||b.role==="forager"){
+        const t=randomFieldTarget(b.role);b.targetX=t.x;b.targetY=t.y;
+      }
+    }
+    dx=b.targetX-b.x;dy=b.targetY-b.y;d=Math.hypot(dx,dy)||1;
+    const base={scout:70,forager:58,nurse:18,guard:28,drone:42}[b.role]*(1-state.weather.disease*.16);
+    const noise=state.wildness*roles.drift*18;
+    b.vx=lerp(b.vx,dx/d*base+rand(-noise,noise),.045);
+    b.vy=lerp(b.vy,dy/d*base+rand(-noise,noise),.045);
+    b.x+=b.vx*dt;b.y+=b.vy*dt;b.wing+=dt*18;b.energy=clamp(b.energy-dt*.002+state.ecoHive.health*dt*.001);
+  }
+}
+function update(dt){
+  const dtDays=dt*state.daysPerSecond;
+  state.elapsedDays+=dtDays;
+  updateEcoHive(dtDays);
+  updateBees(dt,dtDays);
+}
+
+function drawWorldBackground(){
+  const r=screen();ctx.fillStyle="#e8f7e6";ctx.fillRect(0,0,r.width,r.height);
+  const half=state.worldM/2;
+  ctx.strokeStyle="rgba(70,120,70,.18)";ctx.lineWidth=1;
+  for(let x=-half;x<=half;x+=state.gridM){const a=w2s({x,y:-half}),b=w2s({x,y:half});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  for(let y=-half;y<=half;y+=state.gridM){const a=w2s({x:-half,y}),b=w2s({x:half,y});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  const a=w2s({x:-half,y:-half}), b=w2s({x:half,y:half});
+  ctx.strokeStyle="rgba(15,23,42,.35)";ctx.lineWidth=2;ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);
+  drawRuler();
+}
+function drawRuler(){
+  const r=screen(),len=state.rulerM*state.zoom*state.pxM,x=28,y=r.height-55;
+  ctx.strokeStyle="#111827";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke();
+  ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-8);ctx.lineTo(x,y+8);ctx.moveTo(x+len,y-8);ctx.lineTo(x+len,y+8);ctx.stroke();
+  ctx.fillStyle="#111827";ctx.font="12px monospace";ctx.fillText(`${state.rulerM} m scale`,x,y-12);
+}
+function drawFields(){
+  for(const f of state.fields){
+    const p=w2s(f),rr=f.r*state.zoom*state.pxM,info=POLLEN[f.kind];
+    ctx.save();ctx.globalAlpha=.48+.42*f.pollination;ctx.fillStyle=info.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(3,rr),0,TAU);ctx.fill();ctx.restore();
+    ctx.strokeStyle=flowering(f.kind)?"#14532d":"#64748b";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(4,rr),0,TAU);ctx.stroke();
+    if(state.zoom*state.pxM>.08){ctx.fillStyle="#111827";ctx.font="10px monospace";ctx.textAlign="center";ctx.fillText(info.icon,p.x,p.y+3)}
+  }
+}
+function drawEcoHive(){
+  const h=state.ecoHive,p=w2s(h),s=Math.max(.55,state.zoom*state.pxM);
+  const rr=state.hiveRadius*state.zoom*state.pxM;
+  ctx.save();ctx.globalAlpha=.08;ctx.fillStyle="#f2c94c";ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.fill();ctx.restore();
+  ctx.strokeStyle="#d97706";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.stroke();
+  // eco shelter body
+  ctx.fillStyle="#5b826a";ctx.strokeStyle="#123";ctx.lineWidth=2;
+  ctx.fillRect(p.x-34*s,p.y-24*s,68*s,48*s);ctx.strokeRect(p.x-34*s,p.y-24*s,68*s,48*s);
+  ctx.fillStyle="#102a43";ctx.fillRect(p.x-42*s,p.y-40*s,84*s,16*s);
+  ctx.fillStyle="#ad6b19";ctx.fillRect(p.x-20*s,p.y-12*s,40*s,28*s);
+  // comb cells
+  const cells=[["brood",state.ecoHive.brood,"#f97316"],["honey",clamp(state.ecoHive.storedHoney/400),"#f2c94c"],["pollen",clamp(state.ecoHive.storedPollen/180),"#22c55e"]];
+  cells.forEach((c,i)=>{ctx.fillStyle="#e5e7eb";ctx.fillRect(p.x-28*s+i*19*s,p.y+25*s,16*s,7*s);ctx.fillStyle=c[2];ctx.fillRect(p.x-28*s+i*19*s,p.y+25*s,16*s*c[1],7*s)});
+  ctx.fillStyle="#111827";ctx.font=`${Math.max(10,12*s)}px monospace`;ctx.textAlign="center";ctx.fillText("eco-hive colony",p.x,p.y-48*s);
+}
+function drawPallets(){for(const q of state.pallets){const p=w2s(q),s=Math.max(.6,state.zoom*state.pxM);ctx.fillStyle="#f0ad1f";ctx.strokeStyle="#4e2d05";ctx.fillRect(p.x-9*s,p.y-9*s,18*s,18*s);ctx.strokeRect(p.x-9*s,p.y-9*s,18*s,18*s);ctx.fillStyle="#4e2d05";ctx.font=`${Math.max(9,10*s)}px monospace`;ctx.textAlign="center";ctx.fillText("H",p.x,p.y+3*s)}}
+function drawBeeRoutes(){
+  ctx.save();ctx.globalAlpha=.08;ctx.strokeStyle="#111827";ctx.lineWidth=1;
+  for(const b of state.bees.slice(0,Math.min(110,state.bees.length))){
+    if(b.role==="nurse")continue;
+    const p=w2s(b),t=w2s({x:b.targetX,y:b.targetY});
+    ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(t.x,t.y);ctx.stroke();
+  }
+  ctx.restore();
+}
+function drawBees(){
+  for(const b of state.bees){
+    const p=w2s(b),s=Math.max(.55,state.zoom*state.pxM*.9),a=Math.atan2(b.vy,b.vx),col=BEE_COLORS[b.role];
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);
+    ctx.fillStyle=col;ctx.strokeStyle="#111";ctx.beginPath();ctx.ellipse(0,0,5.5*s,3*s,0,0,TAU);ctx.fill();ctx.stroke();
+    ctx.strokeStyle="#111";ctx.beginPath();ctx.moveTo(-2*s,-3*s);ctx.lineTo(-2*s,3*s);ctx.stroke();ctx.beginPath();ctx.moveTo(2*s,-3*s);ctx.lineTo(2*s,3*s);ctx.stroke();
+    const flap=Math.sin(b.wing)*2*s;ctx.fillStyle="rgba(255,255,255,.45)";ctx.beginPath();ctx.ellipse(-1*s,-5*s-flap,5*s,2*s,-.2,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(-1*s,5*s+flap,5*s,2*s,.2,0,TAU);ctx.fill();
+    ctx.restore();
+  }
+}
+function draw(){ctx.clearRect(0,0,screen().width,screen().height);drawWorldBackground();drawFields();drawBeeRoutes();drawEcoHive();drawPallets();drawBees()}
+function row(label,val,frac){return `<div class="row"><span>${label}</span><span>${val}</span></div><div class="bar"><div style="width:${clamp(frac)*100}%"></div></div>`}
+function updateHud(){
+  const pp=globalPollenProfile(),visibleKm=(state.worldM/1000).toFixed(2),role=normalizeRoles(),routeSpread=averageBeeDistance();
+  hud.innerHTML=`<b>Janus Eco-Hive Wild Scale</b><br>scale: ${state.worldM} m world · ${state.pxM.toFixed(2)} px/m · ${visibleKm} km square<br>eco-hive: population ${state.population.toLocaleString()} · visible agents ${state.visibleBees} · action radius ${state.hiveRadius} m<br>colony: brood ${state.ecoHive.brood.toFixed(2)} · health ${state.ecoHive.health.toFixed(2)} · comb ${state.ecoHive.combTemp.toFixed(1)}°C<br>stores: honey ${state.ecoHive.storedHoney.toFixed(1)} L · pollen ${state.ecoHive.storedPollen.toFixed(1)} units · pallets ${state.pallets.length}<br>wild spread: average route ${routeSpread.toFixed(0)} m · pollen diversity ${pp.diversity.toFixed(2)}`;
+  kpis.innerHTML=[["Honey",state.ecoHive.storedHoney.toFixed(1)+"L"],["Pollen",state.ecoHive.storedPollen.toFixed(1)],["Brood",state.ecoHive.brood.toFixed(2)],["Routes",routeSpread.toFixed(0)+"m"]].map(x=>`<div><b>${x[1]}</b>${x[0]}</div>`).join("");
+  metricsEl.innerHTML=row("Pollen nutrition",pp.nutrition.toFixed(2),pp.nutrition)+row("Pollen diversity",pp.diversity.toFixed(2),pp.diversity)+row("Weather forage",weatherFactor().toFixed(2),weatherFactor())+row("Eco-hive health",state.ecoHive.health.toFixed(2),state.ecoHive.health)+row("Brood comb",state.ecoHive.brood.toFixed(2),state.ecoHive.brood)+`<div class="row"><span>Role mix</span><span>S ${(role.scout*100).toFixed(0)} · F ${(role.forager*100).toFixed(0)} · N ${(role.nurse*100).toFixed(0)} · G ${(role.guard*100).toFixed(0)} · D ${(role.drone*100).toFixed(0)}</span></div>`;
+  document.getElementById("scaleOut").innerHTML=`Canvas scale: <b>${state.pxM.toFixed(2)} px/m</b> · 1 km = <b>${(1000*state.pxM).toFixed(0)} px</b> before zoom · ruler = <b>${state.rulerM} m</b>.`;
+}
+function averageBeeDistance(){let total=0,n=0;for(const b of state.bees){if(b.role==="forager"||b.role==="scout"){total+=Math.hypot(b.x-state.ecoHive.x,b.y-state.ecoHive.y);n++}}return total/Math.max(1,n)}
+function buildLegend(){
+  const roleLegend=Object.entries(BEE_COLORS).map(([k,c])=>`<div class="legend"><span class="ico" style="background:${c}22;color:${c}">🐝</span><span>${k}</span><span class="small">colony role</span></div>`).join("");
+  const pollenLegend=Object.entries(POLLEN).map(([k,v])=>`<div class="legend"><span class="ico" style="background:${v.color}22;color:${v.color}">${v.icon}</span><span>${v.label}</span><span class="small">nectar ${v.nectar.toFixed(2)} pollen ${v.pollen.toFixed(2)}</span></div>`).join("");
+  legendEl.innerHTML=`<h3>Colony roles</h3>${roleLegend}<h3>Spread-out wild forage</h3>${pollenLegend}<div class="small" style="margin-top:8px">The large amber ring is the eco-hive action radius. The ruler and grid come from the scale maker.</div>`;
+}
+function syncLabels(){
+  const ids={worldMVal:state.worldM,pxMVal:state.pxM.toFixed(2),gridMVal:state.gridM,rulerMVal:state.rulerM,fieldsVal:state.fieldsRequested,spreadMVal:state.spreadM,patchMVal:state.patchM,wildnessVal:state.wildness.toFixed(2),populationVal:state.population.toLocaleString(),visibleBeesVal:state.visibleBees,hiveRadiusVal:state.hiveRadius,shelterVal:state.shelter.toFixed(2),queenVal:state.queen.toFixed(2),broodCapVal:state.broodCap.toFixed(2),scoutVal:state.roles.scout.toFixed(2),foragerVal:state.roles.forager.toFixed(2),nurseVal:state.roles.nurse.toFixed(2),guardVal:state.roles.guard.toFixed(2),droneVal:state.roles.drone.toFixed(2),driftVal:state.roles.drift.toFixed(2),wildflowerVal:state.pollenWeights.wildflower.toFixed(2),legumeVal:state.pollenWeights.legume.toFixed(2),herbVal:state.pollenWeights.herb.toFixed(2),orchardVal:state.pollenWeights.orchard.toFixed(2),autumnVal:state.pollenWeights.autumn.toFixed(2),grassVal:state.pollenWeights.grass.toFixed(2),tempVal:state.weather.temp.toFixed(1),rainVal:state.weather.rain.toFixed(2),waterVal:state.weather.water.toFixed(2),diseaseVal:state.weather.disease.toFixed(2)};
+  for(const [id,v] of Object.entries(ids)){const e=document.getElementById(id);if(e)e.textContent=v}
+  document.getElementById("pauseBtn").textContent=state.paused?"Resume":"Pause";
+}
+function bind(id,obj,key,reset=false){document.getElementById(id).oninput=e=>{obj[key]=Number(e.target.value);syncLabels();if(reset)resetWorld()}}
+function download(url,name){const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function snapshot(){download(canvas.toDataURL("image/png"),`janus_scale_eco_hive_wild_${Date.now()}.png`)}
+function saveState(){download(URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:"application/json"})),`janus_scale_eco_hive_wild_state_${Date.now()}.json`)}
+async function loadState(file){const data=JSON.parse(await file.text());Object.assign(state,data);syncControls();resetWorld()}
+function applyScalePreset(p){
+  state.scalePreset=p;
+  if(p==="garden"){state.worldM=250;state.pxM=1.2;state.gridM=25;state.rulerM=50;state.spreadM=120;state.hiveRadius=180}
+  if(p==="apiary"){state.worldM=750;state.pxM=.55;state.gridM=50;state.rulerM=100;state.spreadM=380;state.hiveRadius=450}
+  if(p==="farm"){state.worldM=1500;state.pxM=.28;state.gridM=100;state.rulerM=250;state.spreadM=900;state.hiveRadius=850}
+  if(p==="wild"){state.worldM=3000;state.pxM=.14;state.gridM=250;state.rulerM=500;state.spreadM=1600;state.hiveRadius=1400;state.wildness=.92;state.fieldsRequested=72}
+  syncControls();resetWorld();
+}
+function syncControls(){
+  const pairs=[["worldMRange",state.worldM],["pxMRange",state.pxM],["gridMRange",state.gridM],["rulerMRange",state.rulerM],["fieldsRange",state.fieldsRequested],["spreadMRange",state.spreadM],["patchMRange",state.patchM],["wildnessRange",state.wildness],["populationRange",state.population],["visibleBeesRange",state.visibleBees],["hiveRadiusRange",state.hiveRadius],["shelterRange",state.shelter],["queenRange",state.queen],["broodCapRange",state.broodCap]];
+  pairs.forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v});
+  document.getElementById("scalePreset").value=state.scalePreset; syncLabels();
+}
+function initControls(){
+  document.getElementById("scalePreset").onchange=e=>applyScalePreset(e.target.value);
+  document.getElementById("pauseBtn").onclick=()=>{state.paused=!state.paused;syncLabels()};
+  document.getElementById("resetBtn").onclick=resetWorld;
+  document.getElementById("snapshotBtn").onclick=snapshot;
+  document.getElementById("saveBtn").onclick=saveState;
+  document.getElementById("loadFile").onchange=e=>{const f=e.target.files?.[0];if(f)loadState(f)};
+  document.getElementById("layoutWildBtn").onclick=()=>{state.layout="wild";state.wildness=.88;state.spreadM=Math.max(state.spreadM,1000);resetWorld()};
+  document.getElementById("layoutEdgeBtn").onclick=()=>{state.layout="edge";resetWorld()};
+  document.getElementById("layoutClusterBtn").onclick=()=>{state.layout="cluster";resetWorld()};
+  bind("worldMRange",state,"worldM"); bind("pxMRange",state,"pxM"); bind("gridMRange",state,"gridM"); bind("rulerMRange",state,"rulerM");
+  bind("fieldsRange",state,"fieldsRequested",true); bind("spreadMRange",state,"spreadM",true); bind("patchMRange",state,"patchM",true); bind("wildnessRange",state,"wildness");
+  bind("populationRange",state,"population"); bind("visibleBeesRange",state,"visibleBees",true); bind("hiveRadiusRange",state,"hiveRadius"); bind("shelterRange",state,"shelter"); bind("queenRange",state,"queen"); bind("broodCapRange",state,"broodCap");
+  for(const k of ["scout","forager","nurse","guard","drone","drift"]) bind(`${k}Range`,state.roles,k,k!=="drift");
+  for(const k of ["wildflower","legume","herb","orchard","autumn","grass"]) bind(`${k}Range`,state.pollenWeights,k,true);
+  bind("tempRange",state.weather,"temp"); bind("rainRange",state.weather,"rain"); bind("waterRange",state.weather,"water"); bind("diseaseRange",state.weather,"disease");
+  canvas.onwheel=e=>{e.preventDefault();state.zoom=clamp(state.zoom*(e.deltaY<0?1.1:.9),.25,8)};
+  canvas.onmousedown=e=>{state.drag=true;state.dx=e.clientX;state.dy=e.clientY};
+  addEventListener("mouseup",()=>state.drag=false);
+  addEventListener("mousemove",e=>{if(state.drag){state.panX+=(e.clientX-state.dx)/(state.zoom*state.pxM);state.panY+=(e.clientY-state.dy)/(state.zoom*state.pxM);state.dx=e.clientX;state.dy=e.clientY}});
+  addEventListener("keydown",e=>{if(e.code==="Space"){state.paused=!state.paused;syncLabels()}if(e.key.toLowerCase()==="r")resetWorld()});
+}
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!state.paused)update(dt);draw();updateHud();requestAnimationFrame(loop)}
+buildLegend();initControls();resetWorld();requestAnimationFrame(loop);
+</script>
+</body>
+</html>

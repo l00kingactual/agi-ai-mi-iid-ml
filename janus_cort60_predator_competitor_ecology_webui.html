@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Janus CoRT60 Eco-Hive Predator + Competitor Ecology</title>
+<style>
+:root{
+  --bg:#07111f;--panel:#0f172a;--panel2:#09101d;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.14);
+  --text:#eef5ff;--muted:#9fb1cd;--gold:#f2c94c;--green:#22c55e;--red:#ef4444;--blue:#3b82f6;--violet:#a855f7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#dff4dc;color:var(--text);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+#app{display:grid;grid-template-columns:1fr 470px;width:100vw;height:100vh}
+#stage{position:relative;min-width:0;min-height:0}
+canvas{display:block;width:100%;height:100%;background:#e8f7e6}
+aside{background:linear-gradient(180deg,rgba(8,14,26,.98),rgba(7,11,20,.98));border-left:1px solid var(--line);overflow:auto;padding:14px}
+h1{font-size:18px;margin:0 0 6px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#dbeafe;margin:18px 0 8px}
+h3{font-size:12px;color:#fef3c7;margin:10px 0 6px}
+.small{font-size:11px;color:var(--muted);line-height:1.45}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px;margin-bottom:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+label{display:block;font-size:11px;color:#e2e8f0;margin-top:8px}
+input[type=range]{width:100%;accent-color:var(--gold)}
+select,input[type=file],button{width:100%;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:8px;font:inherit;font-size:11px}
+option{color:#111827}
+button{cursor:pointer;background:rgba(242,201,76,.16);border-color:rgba(242,201,76,.35)}
+button:hover{background:rgba(242,201,76,.28)}
+details{border:1px solid var(--line);border-radius:12px;padding:8px;background:rgba(255,255,255,.035);margin-bottom:8px}
+summary{cursor:pointer;font-size:12px;font-weight:700;color:#f8fafc}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;font-size:11px;margin:6px 0}
+.row span:last-child{color:#fef3c7}
+.bar{height:7px;border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden;margin:3px 0 6px}
+.bar>div{height:100%;background:linear-gradient(90deg,#f2c94c,#f97316);width:0%}
+.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.kpi div{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:7px;text-align:center}
+.kpi b{display:block;color:#fef3c7;font-size:15px}
+.legend{display:grid;grid-template-columns:24px 1fr auto;gap:7px;align-items:center;font-size:11px;margin:5px 0}
+.ico{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
+.pill{display:inline-block;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);padding:2px 7px;border-radius:999px;font-size:10px;margin:2px}
+.toolgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;margin-top:8px}
+.tool{font-size:10px;padding:6px;border-radius:9px;border:1px solid rgba(255,255,255,.12);background:#0b1422;cursor:pointer;color:#cbd5e1}
+.tool.sel{background:rgba(79,140,255,.2);border-color:#4f8cff;color:#fff}
+#hud{position:absolute;left:12px;top:12px;min-width:440px;max-width:700px;background:rgba(255,255,255,.93);color:#111827;border:1px solid #d0d5dd;border-radius:14px;padding:10px 12px;font-size:12px;line-height:1.45;box-shadow:0 10px 25px rgba(15,23,42,.18);pointer-events:none}
+#help{position:absolute;left:12px;bottom:12px;background:rgba(255,255,255,.9);border:1px solid #d0d5dd;border-radius:14px;color:#111827;padding:8px 10px;font-size:11px;pointer-events:none}
+@media(max-width:1160px){#app{grid-template-columns:1fr}aside{height:48vh}.kpi{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="world"></canvas>
+    <div id="hud"></div>
+    <div id="help">SPACE pause · R reset · mouse wheel zoom · drag pan · snapshot/save from sidebar · predators + ants + caterpillars enabled</div>
+  </div>
+  <aside>
+    <h1>🐝 Janus CoRT60 Eco-Hive Predator + Competitor Ecology</h1>
+    <div class="small">Merged advanced WebUI: scale maker, eco-hive colony, global climate, pollen/flower ecology, predator memory maps, ant competitors, caterpillar plant pressure, CoRT60/strategy sliders.</div>
+
+    <h2>Run / export</h2>
+    <div class="card">
+      <div class="grid2">
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset</button>
+        <button id="snapshotBtn">PNG snapshot</button>
+        <button id="saveBtn">Save JSON</button>
+      </div>
+      <label>Load JSON state</label>
+      <input id="loadFile" type="file" accept=".json,application/json"/>
+    </div>
+
+    <h2>Scale maker</h2>
+    <div class="card">
+      <label>Scale preset</label>
+      <select id="scalePreset">
+        <option value="garden">garden: 250 m</option>
+        <option value="apiary">apiary: 750 m</option>
+        <option value="farm" selected>farm: 1.5 km</option>
+        <option value="wild">wild valley: 3 km</option>
+      </select>
+      <div class="grid2">
+        <div><label>World size m <span id="worldMVal"></span></label><input id="worldMRange" type="range" min="150" max="4000" step="10" value="1500"/></div>
+        <div><label>px/m <span id="pxMVal"></span></label><input id="pxMRange" type="range" min="0.03" max="1.6" step="0.01" value="0.28"/></div>
+        <div><label>Grid m <span id="gridMVal"></span></label><input id="gridMRange" type="range" min="25" max="500" step="5" value="100"/></div>
+        <div><label>Ruler m <span id="rulerMVal"></span></label><input id="rulerMRange" type="range" min="25" max="1000" step="5" value="250"/></div>
+      </div>
+    </div>
+
+    <h2>Core simulation</h2>
+    <div class="card">
+      <label>Honey scale</label>
+      <select id="scaleSelect">
+        <option value="biological">biological</option>
+        <option value="seasonal_flow" selected>seasonal-flow</option>
+        <option value="farming_simulator">Farming Simulator economy</option>
+      </select>
+      <div class="grid2">
+        <div><label>Visible bees <span id="beesVal"></span></label><input id="beesRange" type="range" min="40" max="1200" value="340"/></div>
+        <div><label>Hive count <span id="hivesVal"></span></label><input id="hivesRange" type="range" min="1" max="24" value="3"/></div>
+        <div><label>Flower fields <span id="fieldsVal"></span></label><input id="fieldsRange" type="range" min="8" max="120" value="48"/></div>
+        <div><label>Days/sec <span id="speedVal"></span></label><input id="speedRange" type="range" min="0.02" max="5" step="0.01" value="0.35"/></div>
+        <div><label>Population/hive <span id="popVal"></span></label><input id="popRange" type="range" min="5000" max="80000" step="500" value="42000"/></div>
+        <div><label>Eco-hive radius m <span id="hiveRadiusVal"></span></label><input id="hiveRadiusRange" type="range" min="100" max="1800" step="10" value="850"/></div>
+      </div>
+      <label>Month <span id="monthVal"></span></label><input id="monthRange" type="range" min="1" max="12" value="7"/>
+      <label>Hemisphere</label>
+      <select id="hemiSelect"><option value="north" selected>Northern</option><option value="south">Southern</option></select>
+    </div>
+
+    <h2>Global climate / weather</h2>
+    <div class="card">
+      <label>Climate preset</label>
+      <select id="climateSelect"></select>
+      <div class="grid2">
+        <div><label>Temperature <span id="tempVal"></span></label><input id="tempRange" type="range" min="-20" max="45" step="0.1" value="19"/></div>
+        <div><label>Rain <span id="rainVal"></span></label><input id="rainRange" type="range" min="0" max="1" step="0.01" value="0.08"/></div>
+        <div><label>Humidity <span id="humidityVal"></span></label><input id="humidityRange" type="range" min="0" max="1" step="0.01" value="0.55"/></div>
+        <div><label>Wind <span id="windVal"></span></label><input id="windRange" type="range" min="0" max="1" step="0.01" value="0.12"/></div>
+        <div><label>Daylight <span id="lightVal"></span></label><input id="lightRange" type="range" min="0" max="1" step="0.01" value="1"/></div>
+        <div><label>Water access <span id="waterVal"></span></label><input id="waterRange" type="range" min="0" max="1" step="0.01" value="1"/></div>
+      </div>
+    </div>
+
+    <h2>Disease / mating / colony</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Varroa <span id="varroaVal"></span></label><input id="varroaRange" type="range" min="0" max="1" step="0.01" value="0.18"/></div>
+        <div><label>Nosema <span id="nosemaVal"></span></label><input id="nosemaRange" type="range" min="0" max="1" step="0.01" value="0.08"/></div>
+        <div><label>Foulbrood <span id="foulbroodVal"></span></label><input id="foulbroodRange" type="range" min="0" max="1" step="0.01" value="0.02"/></div>
+        <div><label>Pesticide <span id="pesticideVal"></span></label><input id="pesticideRange" type="range" min="0" max="1" step="0.01" value="0.04"/></div>
+        <div><label>Queen mating <span id="queenVal"></span></label><input id="queenRange" type="range" min="0" max="1" step="0.01" value="0.82"/></div>
+        <div><label>Brood capacity <span id="broodVal"></span></label><input id="broodRange" type="range" min="0" max="1" step="0.01" value="0.75"/></div>
+        <div><label>Guard readiness <span id="guardsVal"></span></label><input id="guardsRange" type="range" min="0" max="1" step="0.01" value="0.55"/></div>
+        <div><label>Shelter effect <span id="shelterVal"></span></label><input id="shelterRange" type="range" min="0" max="1" step="0.01" value="0.82"/></div>
+      </div>
+    </div>
+
+    <h2>Predators — species counts</h2>
+    <div class="card">
+      <div class="grid3">
+        <div><label>Wasps <span id="waspsVal"></span></label><input id="waspsRange" type="range" min="0" max="50" value="7"/></div>
+        <div><label>Hornets <span id="hornetsVal"></span></label><input id="hornetsRange" type="range" min="0" max="36" value="3"/></div>
+        <div><label>Spiders <span id="spidersVal"></span></label><input id="spidersRange" type="range" min="0" max="50" value="5"/></div>
+        <div><label>Swallows <span id="swallowsVal"></span></label><input id="swallowsRange" type="range" min="0" max="24" value="3"/></div>
+        <div><label>Swifts <span id="swiftsVal"></span></label><input id="swiftsRange" type="range" min="0" max="24" value="2"/></div>
+        <div><label>Bee-eaters <span id="beeEatersVal"></span></label><input id="beeEatersRange" type="range" min="0" max="24" value="1"/></div>
+        <div><label>Woodpeckers <span id="woodpeckersVal"></span></label><input id="woodpeckersRange" type="range" min="0" max="16" value="1"/></div>
+        <div><label>Tits/small birds <span id="titsVal"></span></label><input id="titsRange" type="range" min="0" max="24" value="2"/></div>
+      </div>
+    </div>
+
+    <h2>Predator value setters</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Speed <span id="predSpeedVal"></span></label><input id="predSpeedRange" type="range" min="0.2" max="2.5" step="0.01" value="1"/></div>
+        <div><label>Detection <span id="predDetectVal"></span></label><input id="predDetectRange" type="range" min="0.2" max="2.5" step="0.01" value="1"/></div>
+        <div><label>Attack pressure <span id="predAttackVal"></span></label><input id="predAttackRange" type="range" min="0.1" max="3" step="0.01" value="1"/></div>
+        <div><label>Memory strength <span id="predMemoryVal"></span></label><input id="predMemoryRange" type="range" min="0" max="2" step="0.01" value="1"/></div>
+        <div><label>Fear / retreat <span id="predFearVal"></span></label><input id="predFearRange" type="range" min="0" max="2" step="0.01" value="1"/></div>
+        <div><label>Territory scale <span id="predTerritoryVal"></span></label><input id="predTerritoryRange" type="range" min="0.3" max="3" step="0.01" value="1"/></div>
+      </div>
+    </div>
+
+    <h2>Competitors — ants + caterpillars</h2>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Ant agents <span id="antsVal"></span></label><input id="antsRange" type="range" min="0" max="600" value="120"/></div>
+        <div><label>Ant nests <span id="antNestsVal"></span></label><input id="antNestsRange" type="range" min="0" max="16" value="3"/></div>
+        <div><label>Caterpillars <span id="caterpillarsVal"></span></label><input id="caterpillarsRange" type="range" min="0" max="700" value="160"/></div>
+        <div><label>Other hives <span id="otherHivesVal"></span></label><input id="otherHivesRange" type="range" min="0" max="60" value="5"/></div>
+      </div>
+      <h3>Ant value setters 🐜</h3>
+      <div class="grid2">
+        <div><label>Pheromone strength <span id="antPheromoneVal"></span></label><input id="antPheromoneRange" type="range" min="0" max="2" step="0.01" value="1"/></div>
+        <div><label>Pheromone evaporation <span id="antEvapVal"></span></label><input id="antEvapRange" type="range" min="0" max="2" step="0.01" value="0.75"/></div>
+        <div><label>Hive raid tendency <span id="antRaidVal"></span></label><input id="antRaidRange" type="range" min="0" max="2" step="0.01" value="0.65"/></div>
+        <div><label>Flower competition <span id="antFlowerVal"></span></label><input id="antFlowerRange" type="range" min="0" max="2" step="0.01" value="0.80"/></div>
+      </div>
+      <h3>Caterpillar value setters 🐛</h3>
+      <div class="grid2">
+        <div><label>Feeding rate <span id="catFeedVal"></span></label><input id="catFeedRange" type="range" min="0" max="3" step="0.01" value="1"/></div>
+        <div><label>Spread/migration <span id="catSpreadVal"></span></label><input id="catSpreadRange" type="range" min="0" max="2" step="0.01" value="0.7"/></div>
+        <div><label>Flower damage <span id="catFlowerDamageVal"></span></label><input id="catFlowerDamageRange" type="range" min="0" max="3" step="0.01" value="1"/></div>
+        <div><label>Plant recovery <span id="plantRecoveryVal"></span></label><input id="plantRecoveryRange" type="range" min="0" max="2" step="0.01" value="0.55"/></div>
+      </div>
+    </div>
+
+    <h2>CoRT60 + strategic thinkers</h2>
+    <details>
+      <summary>Open CoRT60 selectors</summary>
+      <div class="small">APC/FIP/CAF/C&S/Planning/OPV/Challenge are pre-selected. These alter exploration, exploitation, risk, social view, and action pressure.</div>
+      <div class="grid3" style="margin-top:8px">
+        <button id="selectAllCort">All 60</button>
+        <button id="clearCort">Clear</button>
+        <button id="coreCort">Bee core</button>
+      </div>
+      <div id="cortGroups"></div>
+    </details>
+    <div class="card">
+      <div class="grid2">
+        <div><label>Sun Tzu terrain/cost <span id="sunVal"></span></label><input id="sunRange" type="range" min="0" max="1" step="0.01" value="0.55"/></div>
+        <div><label>Kautilya intelligence <span id="kautilyaVal"></span></label><input id="kautilyaRange" type="range" min="0" max="1" step="0.01" value="0.45"/></div>
+        <div><label>Hannibal trap geometry <span id="hannibalVal"></span></label><input id="hannibalRange" type="range" min="0" max="1" step="0.01" value="0.40"/></div>
+        <div><label>Alexander tempo <span id="alexanderVal"></span></label><input id="alexanderRange" type="range" min="0" max="1" step="0.01" value="0.45"/></div>
+        <div><label>Caesar infrastructure <span id="caesarVal"></span></label><input id="caesarRange" type="range" min="0" max="1" step="0.01" value="0.50"/></div>
+        <div><label>Scipio learning <span id="scipioVal"></span></label><input id="scipioRange" type="range" min="0" max="1" step="0.01" value="0.45"/></div>
+        <div><label>Xenophon survival <span id="xenophonVal"></span></label><input id="xenophonRange" type="range" min="0" max="1" step="0.01" value="0.55"/></div>
+        <div><label>Vegetius readiness <span id="vegetiusVal"></span></label><input id="vegetiusRange" type="range" min="0" max="1" step="0.01" value="0.55"/></div>
+        <div><label>Zhuge Liang signalling <span id="zhugeVal"></span></label><input id="zhugeRange" type="range" min="0" max="1" step="0.01" value="0.35"/></div>
+      </div>
+    </div>
+
+    <h2>Live metrics</h2>
+    <div class="card">
+      <div class="kpi" id="kpis"></div>
+      <div id="metrics"></div>
+    </div>
+
+    <h2>Key with icons</h2>
+    <div class="card" id="legend"></div>
+  </aside>
+</div>
+
+<script>
+"use strict";
+
+const TAU=Math.PI*2;
+const canvas=document.getElementById("world"),ctx=canvas.getContext("2d");
+const hud=document.getElementById("hud"),kpis=document.getElementById("kpis"),metricsEl=document.getElementById("metrics"),legendEl=document.getElementById("legend");
+
+const CORT={
+"CoRT 1 Breadth":["PMI","CAF","Rules","C&S","AGO","Planning","FIP","APC","Decisions","OPV"],
+"CoRT 2 Organization":["Recognize","Analyze","Compare","Select","Find Other Ways","Start","Organize","Focus","Consolidate","Conclude"],
+"CoRT 3 Interaction":["EBS","Evidence","Argument","Agreement","Disagreement","Being Right 1","Being Right 2","Evidence Types","Value","Interaction Outcome"],
+"CoRT 4 Creativity":["Challenge","Po Provocation","Random Entry","Escape","Stepping Stone","Concept Extraction","Dominant Idea","Remove Faults","Combination","Requirements"],
+"CoRT 5 Information & Feeling":["Information","Questions","Clues","Contradiction","Guessing","Belief","Ready Mades","Emotions & Ego","Values","Simplify & Clarify"],
+"CoRT 6 Action":["Target","Expand","Contract","TEC","PISCO","Projecting","Reviewing","Outcome","Action Plan","Reflection"]
+};
+
+const CLIMATES={
+ temperate_north:{name:"Temperate UK / North Europe",temp:17,rain:.18,humidity:.65,wind:.18,water:.85,nectar:1,disease:.75,pred:.75,flower:[4,5,6,7,8,9],brood:[3,4,5,6,7,8]},
+ mediterranean:{name:"Mediterranean",temp:24,rain:.07,humidity:.42,wind:.16,water:.55,nectar:.88,disease:.55,pred:.80,flower:[3,4,5,6,9,10],brood:[2,3,4,5,6,9]},
+ tropical_rainforest:{name:"Tropical rainforest",temp:28,rain:.42,humidity:.88,wind:.08,water:1,nectar:1.18,disease:1.35,pred:1.20,flower:[1,2,3,4,5,6,7,8,9,10,11,12],brood:[1,2,3,4,5,6,7,8,9,10,11,12]},
+ tropical_savanna:{name:"Tropical savanna",temp:30,rain:.14,humidity:.56,wind:.18,water:.62,nectar:.95,disease:.95,pred:1.05,flower:[1,2,3,4,9,10,11,12],brood:[1,2,3,4,10,11,12]},
+ arid_desert:{name:"Arid / irrigated oasis",temp:33,rain:.02,humidity:.22,wind:.28,water:.35,nectar:.45,disease:.35,pred:.65,flower:[2,3,4,10,11],brood:[2,3,4]},
+ continental:{name:"Continental",temp:18,rain:.12,humidity:.50,wind:.20,water:.70,nectar:.85,disease:.65,pred:.65,flower:[4,5,6,7,8],brood:[4,5,6,7]},
+ boreal:{name:"Boreal / taiga",temp:12,rain:.16,humidity:.58,wind:.22,water:.85,nectar:.65,disease:.48,pred:.45,flower:[5,6,7],brood:[5,6,7]},
+ alpine:{name:"Alpine / highland",temp:10,rain:.14,humidity:.55,wind:.34,water:.78,nectar:.55,disease:.42,pred:.40,flower:[5,6,7,8],brood:[5,6,7]},
+ monsoon:{name:"Monsoon",temp:29,rain:.55,humidity:.90,wind:.22,water:1,nectar:.95,disease:1.45,pred:1.15,flower:[1,2,3,9,10,11,12],brood:[1,2,3,10,11,12]},
+ subtropical:{name:"Subtropical",temp:25,rain:.20,humidity:.72,wind:.12,water:.82,nectar:1.08,disease:1.05,pred:.95,flower:[2,3,4,5,6,7,8,9,10]},
+ polar_greenhouse:{name:"Polar / indoor greenhouse",temp:18,rain:.02,humidity:.55,wind:.02,water:.95,nectar:.62,disease:.75,pred:.08,flower:[1,2,3,4,5,6,7,8,9,10,11,12],brood:[1,2,3,4,5,6,7,8,9,10,11,12]}
+};
+
+const PLANTS={
+ clover:{label:"white clover",icon:"☘️",color:"#9ef29e",flower:[5,6,7,8,9],nectar:.95,pollen:.60,honey:.95,mason:.2,leaf:.55},
+ borage:{label:"borage",icon:"💙",color:"#336bff",flower:[6,7,8,9],nectar:1,pollen:.55,honey:.96,mason:.15,leaf:.45},
+ phacelia:{label:"phacelia",icon:"💜",color:"#9459d9",flower:[5,6,7,8,9],nectar:.95,pollen:.75,honey:.90,mason:.3,leaf:.60},
+ lavender:{label:"lavender",icon:"🪻",color:"#9e7ae6",flower:[6,7,8],nectar:.85,pollen:.45,honey:.80,mason:.1,leaf:.35},
+ sunflower:{label:"sunflower",icon:"🌻",color:"#ffd114",flower:[7,8,9],nectar:.70,pollen:.80,honey:.65,mason:.1,leaf:.65},
+ apple:{label:"apple orchard",icon:"🌸",color:"#ff8ab3",flower:[4,5],nectar:.60,pollen:.80,honey:.70,mason:1,leaf:.25},
+ ivy:{label:"ivy",icon:"🍃",color:"#2e8033",flower:[9,10,11],nectar:.75,pollen:.90,honey:.75,mason:.05,leaf:.2},
+ heather:{label:"heather",icon:"🌺",color:"#c247ad",flower:[8,9,10],nectar:.85,pollen:.55,honey:.90,mason:.05,leaf:.2},
+ buckwheat:{label:"buckwheat",icon:"🌾",color:"#eab308",flower:[7,8,9],nectar:.82,pollen:.65,honey:.78,mason:.05,leaf:.45},
+ willow:{label:"willow/sallow",icon:"🌿",color:"#84cc16",flower:[3,4],nectar:.55,pollen:.95,honey:.55,mason:.65,leaf:.2}
+};
+
+const KIND={
+ honey_bee:{label:"Honey bee",icon:"🐝",color:"#f2c71f"},
+ bumblebee:{label:"Bumblebee",icon:"🐝",color:"#ff730f"},
+ mason_bee:{label:"Mason bee",icon:"🔵",color:"#1a80ff"},
+ leafcutter_bee:{label:"Leafcutter bee",icon:"🟢",color:"#2ec759"},
+ wild_solitary:{label:"Wild solitary",icon:"🟣",color:"#ad59ff"},
+ wasp:{label:"Wasp",icon:"🐝",color:"#ef4444"},
+ hornet:{label:"Hornet",icon:"🐝",color:"#7f1d1d"},
+ spider:{label:"Spider/web",icon:"🕷️",color:"#581c87"},
+ swallow:{label:"Swallow",icon:"🐦",color:"#0f172a"},
+ swift:{label:"Swift",icon:"🪽",color:"#334155"},
+ bee_eater:{label:"Bee-eater",icon:"🦜",color:"#10b981"},
+ woodpecker:{label:"Woodpecker",icon:"🐦",color:"#dc2626"},
+ tit:{label:"Tit / small bird",icon:"🐤",color:"#facc15"},
+ ant:{label:"Ant competitor",icon:"🐜",color:"#7c2d12"},
+ caterpillar:{label:"Caterpillar competitor",icon:"🐛",color:"#65a30d"}
+};
+
+const state={
+ paused:false,scalePreset:"farm",worldM:1500,pxM:.28,gridM:100,rulerM:250,zoom:1,panX:0,panY:0,drag:false,dx:0,dy:0,
+ scale:"seasonal_flow",month:7,hemi:"north",daysPerSecond:.35,elapsedDays:0,
+ beesRequested:340,hivesRequested:3,fieldsRequested:48,population:42000,hiveRadius:850,
+ climate:"temperate_north",
+ weather:{temp:19,rain:.08,humidity:.55,wind:.12,light:1,water:1},
+ disease:{varroa:.18,nosema:.08,foulbrood:.02,pesticide:.04},
+ colony:{queen:.82,broodCap:.75,guards:.55,shelter:.82},
+ predatorCounts:{wasp:7,hornet:3,spider:5,swallow:3,swift:2,bee_eater:1,woodpecker:1,tit:2},
+ predatorConfig:{speed:1,detection:1,attack:1,memory:1,fear:1,territory:1},
+ competitors:{ants:120,antNests:3,caterpillars:160,otherHives:5},
+ antConfig:{pheromone:1,evap:.75,raid:.65,flower:.80},
+ caterpillarConfig:{feed:1,spread:.70,flowerDamage:1,recovery:.55},
+ thinkers:{sun:.55,kautilya:.45,hannibal:.40,alexander:.45,caesar:.50,scipio:.45,xenophon:.55,vegetius:.55,zhuge:.35},
+ selectedCort:new Set(["APC","FIP","CAF","C&S","Planning","Challenge","AGO","OPV"]),
+ hives:[],fields:[],bees:[],predators:[],antNests:[],ants:[],caterpillars:[],pallets:[],
+ stats:{honey:0,pollen:0,brood:0,health:1,pollination:0,crossPollination:0,alarm:0,losses:0,
+  waspSteals:0,hornetRaids:0,birdHits:0,spiderTraps:0,beeLosses:0,nectarStolen:0,honeyLost:0,
+  antRaids:0,antFlowerTheft:0,antPheromone:0,caterpillarBites:0,leafDamage:0,plantRecovery:0,competitionLoss:0,
+  diseaseLoss:0,adaptation:0}
+};
+
+function clamp(v,a=0,b=1){return Math.max(a,Math.min(b,v))}
+function rand(a,b){return a+Math.random()*(b-a)}
+function lerp(a,b,t){return a+(b-a)*t}
+function screen(){return canvas.getBoundingClientRect()}
+function resize(){const r=screen(),d=Math.max(1,devicePixelRatio||1);canvas.width=Math.floor(r.width*d);canvas.height=Math.floor(r.height*d);ctx.setTransform(d,0,0,d,0,0)}
+addEventListener("resize",resize);resize();
+function w2s(p){const r=screen();return{x:r.width/2+(p.x+state.panX)*state.zoom*state.pxM,y:r.height/2+(p.y+state.panY)*state.zoom*state.pxM}}
+function s2w(x,y){const r=screen();return{x:(x-r.width/2)/(state.zoom*state.pxM)-state.panX,y:(y-r.height/2)/(state.zoom*state.pxM)-state.panY}}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function climate(){return CLIMATES[state.climate]}
+function climateMonth(m){return state.hemi==="south"?((m+5)%12)+1:m}
+function isFloweringPlant(k){return PLANTS[k].flower.includes(climateMonth(state.month))}
+function scaledRate(fs){return state.scale==="biological"?.043:state.scale==="seasonal_flow"?Math.min(1,Math.max(.2,fs/600)):fs}
+function cortActive(t){return state.selectedCort.has(t)}
+function cortWeight(){const has=t=>state.selectedCort.has(t)?1:0;return{
+ exploration:.35+.12*has("APC")+.08*has("Challenge")+.05*has("Random Entry"),
+ exploitation:.35+.13*has("FIP")+.10*has("AGO")+.06*has("Planning"),
+ environment:.35+.14*has("CAF")+.07*has("Information"),
+ risk:.30+.13*has("C&S")+.08*has("Evidence")+.06*has("PMI"),
+ social:.30+.12*has("OPV")+.08*has("Interaction Outcome"),
+ action:.30+.10*has("Action Plan")+.10*has("PISCO")+.07*has("TEC")
+}}
+function strategic(){const t=state.thinkers,c=cortWeight();return{
+ avoid:t.sun*c.risk,intel:t.kautilya*c.environment,trap:t.hannibal,tempo:t.alexander,infra:t.caesar,learn:t.scipio,
+ survival:t.xenophon,readiness:t.vegetius,signal:t.zhuge,explore:c.exploration,exploit:c.exploitation
+}}
+function weatherFactor(){const w=state.weather;return clamp(((w.temp-7)/15)*(1-w.rain*.85)*(1-w.wind*.55)*w.light*w.water)}
+function seasonFactor(){const c=climate(),m=climateMonth(state.month);return clamp((c.flower.includes(m)?1:.12)*c.nectar)}
+function diseasePressure(){const d=state.disease,c=climate();return clamp((d.varroa*.34+d.nosema*.18+d.foulbrood*.34+d.pesticide*.25)*c.disease)}
+function reproductiveFactor(){const c=climate(),m=climateMonth(state.month),inBrood=c.brood.includes(m)?1:.25;return clamp(inBrood*(.35+.35*state.colony.queen+.25*state.colony.broodCap)*(1-diseasePressure()*.55))}
+function plantScore(field,kind="honey_bee"){
+ const p=PLANTS[field.plant],flow=isFloweringPlant(field.plant)?1:.07;
+ let match=kind==="mason_bee"?p.mason:kind==="leafcutter_bee"?p.leaf:p.honey;
+ const leaf=clamp(field.leafHealth);
+ const comp=clamp(1-field.antPressure*.28-field.caterpillarPressure*.34-state.competitors.otherHives*.004);
+ return clamp((.45*p.nectar+.35*p.pollen+.2*match)*flow*leaf*comp*(1-field.depleted)*seasonFactor());
+}
+class MemoryMap{
+ constructor(decay=.08,max=80){this.decay=decay;this.max=max;this.events=[]}
+ add(kind,x,y,strength=1,tag=""){this.events.push({kind,x,y,strength,tag,age:0});if(this.events.length>this.max)this.events.shift()}
+ update(dt){for(const e of this.events){e.age+=dt;e.strength=Math.max(0,e.strength-this.decay*dt/Math.max(.05,state.predatorConfig.memory))}this.events=this.events.filter(e=>e.strength>.02)}
+ best(kind=null){let b=null,bs=-1;for(const e of this.events){if(kind&&e.kind!==kind)continue;const s=e.strength/(1+e.age*.25);if(s>bs){b=e;bs=s}}return b}
+ scoreAt(x,y,kind=null){let s=0;for(const e of this.events){if(kind&&e.kind!==kind)continue;const d=Math.hypot(x-e.x,y-e.y);s+=e.strength/(1+d*.04)}return s}
+}
+class PredatorAgent{
+ constructor(kind,i,home){
+  const sp=strategic(),cfg=state.predatorConfig;
+  const base={
+    wasp:{speed:30,det:58,atk:8,press:.24,terr:45,target:"nectar"},
+    hornet:{speed:22,det:86,atk:16,press:.48,terr:70,target:"hive"},
+    spider:{speed:4.5,det:42,atk:7,press:.22,terr:16,target:"web"},
+    swallow:{speed:65,det:105,atk:10,press:.32,terr:160,target:"aerial"},
+    swift:{speed:78,det:116,atk:9,press:.28,terr:180,target:"aerial"},
+    bee_eater:{speed:56,det:125,atk:13,press:.52,terr:150,target:"bee"},
+    woodpecker:{speed:18,det:85,atk:16,press:.50,terr:80,target:"hive"},
+    tit:{speed:38,det:70,atk:8,press:.24,terr:75,target:"bee"}
+  }[kind];
+  const a=rand(0,TAU); this.id=`${kind}-${i}`; this.kind=kind;
+  this.x=kind==="spider"?home.x+rand(-8,8):rand(-state.worldM*.42,state.worldM*.42);
+  this.y=kind==="spider"?home.y+rand(-8,8):rand(-state.worldM*.42,state.worldM*.42);
+  this.speed=base.speed*cfg.speed*(1+sp.tempo*.35);
+  this.detection_radius=base.det*cfg.detection*(1+sp.intel*.45);
+  this.attack_radius=base.atk; this.pressure=base.press*cfg.attack;
+  this.vx=Math.cos(a)*this.speed; this.vy=Math.sin(a)*this.speed;
+  this.hunger=rand(.15,.9); this.fear=rand(0,.25); this.cooldown=rand(0,2);
+  this.territory={x:home.x,y:home.y,radius:base.terr*cfg.territory*(1+sp.trap*.35)};
+  this.target=null; this.state=kind==="spider"?"build_web":"patrol"; this.memory=new MemoryMap(.08*(1-sp.intel*.4),100);
+  this.web=kind==="spider"?{x:home.x,y:home.y,radius:rand(22,38)*(1+sp.trap*.4),integrity:1,traffic:0}:null;
+  this.trail=[]; this.lastAction="";
+ }
+ common(dt){this.cooldown=Math.max(0,this.cooldown-dt);this.hunger=clamp(this.hunger+dt*.035,0,1);this.fear=clamp(this.fear-dt*.05*state.predatorConfig.fear,0,1);this.memory.update(dt)}
+ steer(tx,ty,dt,gain=1){const dx=tx-this.x,dy=ty-this.y,d=Math.hypot(dx,dy)||1;this.vx=lerp(this.vx,dx/d*this.speed,.055*gain);this.vy=lerp(this.vy,dy/d*this.speed,.055*gain);this.x+=this.vx*dt;this.y+=this.vy*dt;const lim=state.worldM*.48;this.x=clamp(this.x,-lim,lim);this.y=clamp(this.y,-lim,lim);if(Math.abs(this.x)>=lim-2)this.vx*=-.75;if(Math.abs(this.y)>=lim-2)this.vy*=-.75;this.trail.push({x:this.x,y:this.y});if(this.trail.length>45)this.trail.shift()}
+ patrol(dt,t,scale=1){const n=Number(this.id.replace(/\D/g,""))||0,r=this.territory.radius*scale;this.state="patrol";this.steer(this.territory.x+Math.cos(t*.00022+n)*r,this.territory.y+Math.sin(t*.00019+n*1.7)*r,dt,.65)}
+}
+
+function resetStats(){state.stats={honey:0,pollen:0,brood:0,health:1,pollination:0,crossPollination:0,alarm:0,losses:0,waspSteals:0,hornetRaids:0,birdHits:0,spiderTraps:0,beeLosses:0,nectarStolen:0,honeyLost:0,antRaids:0,antFlowerTheft:0,antPheromone:0,caterpillarBites:0,leafDamage:0,plantRecovery:0,competitionLoss:0,diseaseLoss:0,adaptation:0}}
+function makeHive(i){return{id:`hive-${i}`,x:-state.worldM*.08+(i%5)*state.worldM*.04,y:-state.worldM*.05+Math.floor(i/5)*state.worldM*.045,name:i?`Apiary ${i}`:"Eco-Hive Colony",stored:0,pollen:0,pallets:0,threshold:400,health:1,brood:.45,pop:state.population,rate:scaledRate(50),radius:state.hiveRadius,queen:state.colony.queen,guards:0,combTemp:34.5}}
+function makeFields(){const keys=Object.keys(PLANTS),arr=[];const spread=state.worldM*.42;for(let i=0;i<state.fieldsRequested;i++){const a=TAU*i/state.fieldsRequested,r=Math.sqrt(Math.random())*spread,k=keys[i%keys.length];arr.push({id:`field-${i}`,plant:k,x:Math.cos(a)*r+rand(-state.worldM*.03,state.worldM*.03),y:Math.sin(a)*r+rand(-state.worldM*.03,state.worldM*.03),r:rand(14,46)*state.worldM/1500,area:rand(.5,2.9),nectar:rand(.5,1),pollination:0,depleted:0,leafHealth:rand(.75,1),antPressure:0,caterpillarPressure:0})}return arr}
+function randomFieldTarget(kind="honey_bee"){let total=0,bag=[];for(const f of state.fields){const w=plantScore(f,kind)+.015;bag.push([w,f]);total+=w}let pick=Math.random()*Math.max(.001,total),sel=bag[0]?.[1]||{x:0,y:0,r:20,id:"none"};for(const [w,f] of bag){pick-=w;if(pick<=0){sel=f;break}}const a=rand(0,TAU),r=Math.random()*sel.r;return{x:sel.x+Math.cos(a)*r,y:sel.y+Math.sin(a)*r,field:sel.id}}
+function makeBees(){const kinds=["honey_bee","honey_bee","honey_bee","bumblebee","mason_bee","leafcutter_bee","wild_solitary"],arr=[];for(let i=0;i<state.beesRequested;i++){const h=state.hives[i%state.hives.length],kind=kinds[i%kinds.length],t=randomFieldTarget(kind);arr.push({id:`bee-${i}`,kind,x:h.x+rand(-12,12),y:h.y+rand(-12,12),vx:0,vy:0,targetX:t.x,targetY:t.y,hive:h.id,nectar:0,pollen:0,energy:rand(.75,1),role:i%7===0?"scout":"worker",lastField:null,wing:rand(0,TAU),alive:true})}return arr}
+function highTrafficField(){let b=state.fields[0],bs=-1;for(const f of state.fields){let traffic=0;for(const bee of state.bees||[]){if(bee.alive&&Math.hypot(bee.x-f.x,bee.y-f.y)<f.r*1.8)traffic++}const s=traffic+f.pollination*8+(isFloweringPlant(f.plant)?4:0)-f.caterpillarPressure*4; if(s>bs){b=f;bs=s}}return b||{x:0,y:0,r:20}}
+function makePredators(){const arr=[];for(const kind of Object.keys(state.predatorCounts)){for(let i=0;i<state.predatorCounts[kind];i++){const home=(kind==="hornet"||kind==="woodpecker")?(state.hives[i%state.hives.length]||{x:0,y:0}):(state.fields[i%state.fields.length]||{x:0,y:0});arr.push(new PredatorAgent(kind,i,home))}}return arr}
+function makeAntNests(){return Array.from({length:state.competitors.antNests},(_,i)=>{const a=TAU*i/Math.max(1,state.competitors.antNests),r=state.worldM*.28;return{id:`ant-nest-${i}`,x:Math.cos(a)*r+rand(-40,40),y:Math.sin(a)*r+rand(-40,40),stored:0,pheromones:[],pressure:0}})}
+function makeAnts(){const arr=[];if(!state.antNests.length)return arr;for(let i=0;i<state.competitors.ants;i++){const n=state.antNests[i%state.antNests.length];arr.push({id:`ant-${i}`,x:n.x+rand(-8,8),y:n.y+rand(-8,8),vx:0,vy:0,nest:n.id,state:"search",carry:0,targetX:n.x,targetY:n.y,targetKind:"field",trail:[]})}return arr}
+function makeCaterpillars(){const arr=[];for(let i=0;i<state.competitors.caterpillars;i++){const f=state.fields[i%state.fields.length]||{x:0,y:0,r:20,id:"field-0"};arr.push({id:`cat-${i}`,x:f.x+rand(-f.r,f.r),y:f.y+rand(-f.r,f.r),vx:rand(-2,2),vy:rand(-2,2),field:f.id,feeding:rand(.4,1),age:rand(0,1),state:"feed"})}return arr}
+
+function resetWorld(){state.elapsedDays=0;state.pallets=[];resetStats();state.hives=Array.from({length:state.hivesRequested},(_,i)=>makeHive(i));state.fields=makeFields();state.bees=makeBees();state.predators=makePredators();state.antNests=makeAntNests();state.ants=makeAnts();state.caterpillars=makeCaterpillars();syncLabels()}
+function nearestHive(id){return state.hives.find(h=>h.id===id)||state.hives[0]}
+function nearestBee(p,pred=()=>true){let b=null,bd=1e9;for(const bee of state.bees){if(!bee.alive||!pred(bee))continue;const d=Math.hypot(bee.x-p.x,bee.y-p.y);if(d<bd){b=bee;bd=d}}return[b,bd]}
+function nearestHiveTo(p){let h=null,hd=1e9;for(const x of state.hives){const d=Math.hypot(x.x-p.x,x.y-p.y);if(d<hd){h=x;hd=d}}return[h,hd]}
+function beeNearHive(b){return state.hives.some(h=>Math.hypot(b.x-h.x,b.y-h.y)<Math.min(50,h.radius*.07))}
+function respawnBee(b){const h=nearestHive(b.hive);b.x=h.x+rand(-10,10);b.y=h.y+rand(-10,10);b.vx=rand(-5,5);b.vy=rand(-5,5);b.nectar=0;b.pollen=0;b.energy=clamp(b.energy-.12);const t=randomFieldTarget(b.kind);b.targetX=t.x;b.targetY=t.y}
+function guardPressure(h){const sp=strategic();return clamp((h?.guards||0)*.45+state.stats.alarm*.45+sp.readiness*.35)}
+function updateFields(dtDays){for(const f of state.fields){f.antPressure=clamp(f.antPressure-dtDays*.02);f.caterpillarPressure=clamp(f.caterpillarPressure-dtDays*.01);const recovery=state.caterpillarConfig.recovery*dtDays*.018*(1-f.caterpillarPressure);const before=f.leafHealth;f.leafHealth=clamp(f.leafHealth+recovery,0,1);state.stats.plantRecovery+=Math.max(0,f.leafHealth-before);f.depleted=clamp(f.depleted-dtDays*.006)}}
+function updateHiveHoney(h,dtDays){const sp=strategic();h.guards=state.colony.guards*state.thinkers.vegetius*clamp(state.bees.length/260);h.pop=state.population;const disease=1-diseasePressure();const colony=clamp(h.pop/40000);let forage=0,area=0;for(const f of state.fields){const d=Math.hypot(h.x-f.x,h.y-f.y);if(d<=h.radius){const rf=clamp(1-d/h.radius);forage+=plantScore(f,"honey_bee")*f.area*rf;area+=f.area}}forage=area>0?clamp(forage/area):.04;const comp=clamp(1-state.competitors.otherHives*.012-state.stats.competitionLoss*.002);const prod=colony*forage*weatherFactor()*seasonFactor()*state.weather.water*h.health*h.queen*disease*comp*(1+sp.infra*.20);h.stored+=h.rate*prod*dtDays;h.pollen+=forage*dtDays*0.8;h.brood=clamp(h.brood+dtDays*(reproductiveFactor()*.010-diseasePressure()*.012-state.stats.alarm*.003));h.health=clamp(h.health+dtDays*((forage+.2)*.003-diseasePressure()*.007-state.stats.alarm*.002+state.colony.shelter*.002));h.combTemp=lerp(h.combTemp,34.5+state.weather.temp*.015-state.weather.rain*.25+state.colony.shelter*.15,.03);while(h.stored>=h.threshold){h.stored-=h.threshold;h.pallets++;state.pallets.push({id:`${h.id}-pallet-${h.pallets}`,x:h.x+45+h.pallets*14,y:h.y-45,liters:h.threshold})}}
+function updateBees(dt,dtDays){const sp=strategic();for(const b of state.bees){if(!b.alive)continue;let dx=b.targetX-b.x,dy=b.targetY-b.y,d=Math.hypot(dx,dy)||1;if(d<6+state.worldM*.002){const field=state.fields.find(f=>Math.hypot(b.x-f.x,b.y-f.y)<f.r*1.3);if(field){const score=plantScore(field,b.kind);b.nectar=clamp(b.nectar+dtDays*score*.55);b.pollen=clamp(b.pollen+dtDays*PLANTS[field.plant].pollen*.28*field.leafHealth);field.pollination=clamp(field.pollination+dtDays*score*.06);field.depleted=clamp(field.depleted+dtDays*.003);state.stats.pollination+=dtDays*score*.02;if(b.lastField&&b.lastField!==field.id)state.stats.crossPollination+=dtDays*.01;b.lastField=field.id}const shouldReturn=(b.nectar>.65||b.pollen>.7||Math.random()<.18||state.stats.alarm>.55);if(shouldReturn){const h=nearestHive(b.hive);b.targetX=h.x+rand(-12,12);b.targetY=h.y+rand(-12,12);h.stored+=b.nectar*.018*state.population/Math.max(1,state.beesRequested)*weatherFactor();h.pollen+=b.pollen*.010*state.population/Math.max(1,state.beesRequested);b.nectar=0;b.pollen=0}else{const t=randomFieldTarget(b.kind);b.targetX=t.x;b.targetY=t.y}}dx=b.targetX-b.x;dy=b.targetY-b.y;d=Math.hypot(dx,dy)||1;const base={honey_bee:58,bumblebee:43,mason_bee:46,leafcutter_bee:49,wild_solitary:38}[b.kind]||45;const alert=1+state.stats.alarm*.2;const speed=base*(.65+.35*weatherFactor())*(1+sp.tempo*.18)*alert;const noise=12*sp.explore; b.vx=lerp(b.vx,dx/d*speed+rand(-noise,noise),.045);b.vy=lerp(b.vy,dy/d*speed+rand(-noise,noise),.045);b.x+=b.vx*dt;b.y+=b.vy*dt;b.wing+=dt*18;b.energy=clamp(b.energy-dt*.0015+state.hives.reduce((a,h)=>a+h.health,0)/Math.max(1,state.hives.length)*dt*.001)}}
+function addPredatorMemory(p){const sp=strategic();if(Math.random()>.08*(.5+sp.intel))return;if(p.kind==="wasp"){const [b]=nearestBee(p,b=>b.nectar>.05);if(b)p.memory.add("nectar_bee",b.x,b.y,b.nectar+.2,b.id)}else if(p.kind==="hornet"||p.kind==="woodpecker"){for(const h of state.hives){const sig=clamp(h.stored/h.threshold);if(sig>.03)p.memory.add("hive_honey",h.x,h.y,sig,h.id)}}else if(["swallow","swift","bee_eater","tit"].includes(p.kind)){const [b]=nearestBee(p,b=>!beeNearHive(b));if(b)p.memory.add("open_bee",b.x,b.y,.5,b.id)}else if(p.kind==="spider"){const f=highTrafficField();if(f)p.memory.add("flower_traffic",f.x,f.y,.8+f.pollination,f.id)}}
+function updatePredators(dt,t){const sp=strategic();state.stats.alarm=Math.max(0,state.stats.alarm-dt*.08);for(const p of state.predators){p.common(dt);addPredatorMemory(p);
+ if(p.kind==="wasp"){const [b,d]=nearestBee(p,b=>b.nectar>.05);if(b&&d<p.detection_radius&&p.hunger>.2&&p.fear<.7){p.state="seek_nectar";p.steer(b.x,b.y,dt,1.35);if(d<p.attack_radius&&p.cooldown<=0){const stolen=Math.min(b.nectar,.35+p.hunger*.25);b.nectar-=stolen;p.hunger=Math.max(0,p.hunger-.35);p.cooldown=1.1;p.state="retreat";p.memory.add("successful_steal",b.x,b.y,1,b.id);state.stats.waspSteals++;state.stats.nectarStolen+=stolen;state.stats.alarm=clamp(state.stats.alarm+.04)}}else{const m=p.memory.best("nectar_bee");if(m&&p.hunger>.55){p.state="search_scent";p.steer(m.x,m.y,dt,.72)}else p.patrol(dt,t)}}
+ else if(p.kind==="hornet"){const [h,hd]=nearestHiveTo(p),gp=guardPressure(h);if(h&&(hd<p.detection_radius||p.hunger>.68)&&p.fear<gp+.62){p.state=gp>.55?"probe_hive":"raid_hive";p.steer(h.x,h.y,dt,gp>.55?.65:1.05);if(hd<p.attack_radius&&p.cooldown<=0){const lost=Math.min(h.stored,2.5+p.hunger*4);h.stored-=lost;h.health=clamp(h.health-.006*(1+p.hunger));p.hunger=Math.max(0,p.hunger-.32);p.fear=clamp(p.fear+gp*.45);p.cooldown=1.8;p.memory.add("successful_raid",h.x,h.y,1,h.id);state.stats.hornetRaids++;state.stats.honeyLost+=lost;state.stats.alarm=clamp(state.stats.alarm+.13)}}else p.patrol(dt,t,1.1)}
+ else if(["swallow","swift","bee_eater","tit"].includes(p.kind)){const heavy=p.kind==="bee_eater";const [b,d]=nearestBee(p,b=>!beeNearHive(b));if(b&&d<p.detection_radius&&p.cooldown<=0&&p.hunger>.25){p.state=heavy?"target_bee":"swoop";p.steer(b.x,b.y,dt,heavy?1.65:2.05);if(d<p.attack_radius){respawnBee(b);p.hunger=Math.max(0,p.hunger-(heavy?.45:.55));p.cooldown=heavy?2.0:2.4;p.state="climb";p.memory.add("successful_swoop",b.x,b.y,.8,b.id);state.stats.birdHits++;state.stats.beeLosses++;state.stats.alarm=clamp(state.stats.alarm+.07)}}else{p.state=p.cooldown>0?"climb":"open_patrol";const lane=Number(p.id.replace(/\D/g,""))%4;const lim=state.worldM*.42;const tx=lane<2?(p.x>0?-lim:lim):Math.sin(t*.00025)*lim;const ty=lane>=2?(p.y>0?-lim:lim):Math.cos(t*.00025)*lim;p.steer(tx,ty,dt,.58)}}
+ else if(p.kind==="woodpecker"){const [h,hd]=nearestHiveTo(p);if(h&&hd<p.detection_radius&&p.cooldown<=0){p.state="peck_hive";p.steer(h.x,h.y,dt,.9);if(hd<p.attack_radius){const lost=Math.min(h.stored,4.5);h.stored-=lost;h.health=clamp(h.health-.018);p.cooldown=3;state.stats.birdHits++;state.stats.honeyLost+=lost;state.stats.alarm=clamp(state.stats.alarm+.10)}}else p.patrol(dt,t,.85)}
+ else if(p.kind==="spider"){if(!p.web){const f=highTrafficField();p.web={x:f.x,y:f.y,radius:rand(20,38),integrity:1,traffic:0}}p.web.integrity=clamp(p.web.integrity-dt*.004);p.web.traffic=clamp(p.web.traffic-dt*.03);const mem=p.memory.best("flower_traffic");if((p.web.integrity<.18||p.web.traffic<.05)&&mem&&p.cooldown<=0){p.web.x=mem.x+rand(-6,6);p.web.y=mem.y+rand(-6,6);p.web.integrity=1;p.web.traffic=.25;p.cooldown=3;p.state="relocate_web"}p.steer(p.web.x+Math.sin(t*.001)*2,p.web.y+Math.cos(t*.001)*2,dt,.2);const [b,d]=nearestBee(p,b=>Math.hypot(b.x-p.web.x,b.y-p.web.y)<p.web.radius);if(b){p.web.traffic=clamp(p.web.traffic+dt*.08);p.state="trap_bee";const wd=Math.hypot(b.x-p.web.x,b.y-p.web.y)||1;b.vx*=.84;b.vy*=.84;b.vx+=(p.web.x-b.x)/wd*8*dt;b.vy+=(p.web.y-b.y)/wd*8*dt;b.nectar=Math.max(0,b.nectar-p.pressure*dt);if(d<p.attack_radius&&p.cooldown<=0){respawnBee(b);p.web.integrity=clamp(p.web.integrity-.25);p.cooldown=2.8;state.stats.spiderTraps++;state.stats.beeLosses++;state.stats.alarm=clamp(state.stats.alarm+.04)}}else if(p.web.integrity<.65&&p.cooldown<=0){p.state="repair_web";p.web.integrity=clamp(p.web.integrity+dt*.16)}else p.state="ambush"}}
+ for(const b of state.bees){let strongest=null,sd=1e9;for(const p of state.predators){const d=Math.hypot(b.x-p.x,b.y-p.y);if(d<p.detection_radius*.32&&d<sd){strongest=p;sd=d}}if(strongest){b.vx+=(b.x-strongest.x)/(sd||1)*strongest.pressure*35;b.vy+=(b.y-strongest.y)/(sd||1)*strongest.pressure*35;if(Math.random()<state.stats.alarm*.008){const h=nearestHive(b.hive);b.targetX=h.x+rand(-10,10);b.targetY=h.y+rand(-10,10)}}}}
+function antNestById(id){return state.antNests.find(n=>n.id===id)||state.antNests[0]}
+function nearestAntTarget(ant){const nest=antNestById(ant.nest);let best=null,bs=-1;if(Math.random()<state.antConfig.raid*.25){for(const h of state.hives){const d=Math.hypot(ant.x-h.x,ant.y-h.y);const s=(h.stored/h.threshold+state.antConfig.raid*.2)/(1+d*.005);if(s>bs){best={x:h.x,y:h.y,kind:"hive",id:h.id};bs=s}}}for(const f of state.fields){const d=Math.hypot(ant.x-f.x,ant.y-f.y);const s=(plantScore(f,"honey_bee")+.05+nest.pheromones.filter(p=>p.target===f.id).reduce((a,p)=>a+p.strength,0)*.1)/(1+d*.006);if(s>bs){best={x:f.x,y:f.y,kind:"field",id:f.id};bs=s}}return best||{x:nest.x,y:nest.y,kind:"nest",id:nest.id}}
+function updateAnts(dt,dtDays){for(const n of state.antNests){for(const ph of n.pheromones){ph.strength=Math.max(0,ph.strength-dt*.03*state.antConfig.evap)}n.pheromones=n.pheromones.filter(p=>p.strength>.02);state.stats.antPheromone+=n.pheromones.reduce((a,p)=>a+p.strength,0)*dt*.001}
+ for(const ant of state.ants){const nest=antNestById(ant.nest);if(!nest)continue;let target;if(ant.state==="return"){target={x:nest.x,y:nest.y,kind:"nest",id:nest.id}}else{target={x:ant.targetX,y:ant.targetY,kind:ant.targetKind,id:ant.targetId};if(!target.id||Math.random()<.015)target=nearestAntTarget(ant)}let dx=target.x-ant.x,dy=target.y-ant.y,d=Math.hypot(dx,dy)||1;if(d<6){if(target.kind==="nest"&&ant.state==="return"){nest.stored+=ant.carry;ant.carry=0;ant.state="search";target=nearestAntTarget(ant)}else if(target.kind==="field"){const f=state.fields.find(x=>x.id===target.id);if(f){const take=Math.min(.14*state.antConfig.flower*dtDays,Math.max(0,1-f.depleted));ant.carry+=take;f.depleted=clamp(f.depleted+take*.7);f.antPressure=clamp(f.antPressure+dtDays*.04);state.stats.antFlowerTheft+=take;state.stats.competitionLoss+=take*.12;nest.pheromones.push({x:f.x,y:f.y,target:f.id,strength:state.antConfig.pheromone*(.25+take),age:0});if(nest.pheromones.length>90)nest.pheromones.shift();ant.state="return"}}else if(target.kind==="hive"){const h=state.hives.find(x=>x.id===target.id);if(h){const raid=Math.min(h.stored,.08*state.antConfig.raid*dtDays*state.population/5000);h.stored-=raid;ant.carry+=raid*.2;state.stats.antRaids+=raid;state.stats.honeyLost+=raid;state.stats.alarm=clamp(state.stats.alarm+raid*.0008);ant.state="return"}}}
+ dx=target.x-ant.x;dy=target.y-ant.y;d=Math.hypot(dx,dy)||1;const speed=28+state.antConfig.pheromone*5;ant.vx=lerp(ant.vx,dx/d*speed+rand(-4,4),.06);ant.vy=lerp(ant.vy,dy/d*speed+rand(-4,4),.06);ant.x+=ant.vx*dt;ant.y+=ant.vy*dt;ant.targetX=target.x;ant.targetY=target.y;ant.targetKind=target.kind;ant.targetId=target.id;ant.trail.push({x:ant.x,y:ant.y});if(ant.trail.length>18)ant.trail.shift()}}
+function updateCaterpillars(dt,dtDays){for(const c of state.caterpillars){let f=state.fields.find(x=>x.id===c.field);if(!f||f.leafHealth<.12||Math.random()<state.caterpillarConfig.spread*dt*.002){f=state.fields[Math.floor(Math.random()*state.fields.length)];if(f){c.field=f.id;c.x=f.x+rand(-f.r,f.r);c.y=f.y+rand(-f.r,f.r);c.state="migrate"}}if(!f)continue;const d=Math.hypot(c.x-f.x,c.y-f.y);if(d>f.r*1.2){c.vx+=(f.x-c.x)/(d||1)*4*dt;c.vy+=(f.y-c.y)/(d||1)*4*dt}else{const bite=dtDays*.012*c.feeding*state.caterpillarConfig.feed*state.caterpillarConfig.flowerDamage;f.leafHealth=clamp(f.leafHealth-bite,0,1);f.caterpillarPressure=clamp(f.caterpillarPressure+bite*.9);f.depleted=clamp(f.depleted+bite*.35);state.stats.caterpillarBites+=bite;state.stats.leafDamage+=bite;state.stats.competitionLoss+=bite*.18}c.vx=lerp(c.vx,rand(-5,5),.015);c.vy=lerp(c.vy,rand(-5,5),.015);c.x+=c.vx*dt*state.caterpillarConfig.spread;c.y+=c.vy*dt*state.caterpillarConfig.spread;c.age+=dtDays*.001}}
+function update(dt,t){const dtDays=dt*state.daysPerSecond;state.elapsedDays+=dtDays;if(state.elapsedDays>30){state.elapsedDays=0;state.month=1+(state.month%12);document.getElementById("monthRange").value=state.month;syncLabels()}updateFields(dtDays);for(const h of state.hives)updateHiveHoney(h,dtDays);updateBees(dt,dtDays);updatePredators(dt,t);updateAnts(dt,dtDays);updateCaterpillars(dt,dtDays);state.stats.honey=state.hives.reduce((a,h)=>a+h.stored,0);state.stats.pollen=state.hives.reduce((a,h)=>a+h.pollen,0);state.stats.brood=state.hives.reduce((a,h)=>a+h.brood,0)/Math.max(1,state.hives.length);state.stats.health=state.hives.reduce((a,h)=>a+h.health,0)/Math.max(1,state.hives.length);state.stats.diseaseLoss+=diseasePressure()*dtDays*.02}
+
+function drawBackground(){const r=screen();ctx.fillStyle="#e8f7e6";ctx.fillRect(0,0,r.width,r.height);const half=state.worldM/2;ctx.strokeStyle="rgba(70,120,70,.18)";ctx.lineWidth=1;for(let x=-half;x<=half;x+=state.gridM){const a=w2s({x,y:-half}),b=w2s({x,y:half});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}for(let y=-half;y<=half;y+=state.gridM){const a=w2s({x:-half,y}),b=w2s({x:half,y});ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}const a=w2s({x:-half,y:-half}),b=w2s({x:half,y:half});ctx.strokeStyle="rgba(15,23,42,.35)";ctx.lineWidth=2;ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);drawRuler()}
+function drawRuler(){const r=screen(),len=state.rulerM*state.zoom*state.pxM,x=28,y=r.height-55;ctx.strokeStyle="#111827";ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke();ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-8);ctx.lineTo(x,y+8);ctx.moveTo(x+len,y-8);ctx.lineTo(x+len,y+8);ctx.stroke();ctx.fillStyle="#111827";ctx.font="12px monospace";ctx.fillText(`${state.rulerM} m scale`,x,y-12)}
+function drawFields(){for(const f of state.fields){const p=w2s(f),rr=Math.max(3,f.r*state.zoom*state.pxM),plant=PLANTS[f.plant];ctx.save();ctx.globalAlpha=.32+.52*f.leafHealth;ctx.fillStyle=plant.color;ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.fill();ctx.restore();ctx.strokeStyle=isFloweringPlant(f.plant)?"#14532d":"#64748b";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.stroke();if(f.leafHealth<.55){ctx.strokeStyle="rgba(220,38,38,.45)";for(let i=-rr;i<rr;i+=8){ctx.beginPath();ctx.moveTo(p.x+i,p.y-rr);ctx.lineTo(p.x+i+rr,p.y+rr);ctx.stroke()}}if(state.zoom*state.pxM>.07){ctx.fillStyle="#111827";ctx.font="10px monospace";ctx.textAlign="center";ctx.fillText(plant.icon,p.x,p.y+3)}}}
+function drawHives(){for(const h of state.hives){const p=w2s(h),rr=h.radius*state.zoom*state.pxM,s=Math.max(.55,state.zoom*state.pxM);ctx.save();ctx.globalAlpha=.08;ctx.fillStyle="#f2c94c";ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.fill();ctx.restore();ctx.strokeStyle="#d97706";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.x,p.y,rr,0,TAU);ctx.stroke();ctx.fillStyle="#5b826a";ctx.strokeStyle="#123";ctx.lineWidth=2;ctx.fillRect(p.x-34*s,p.y-24*s,68*s,48*s);ctx.strokeRect(p.x-34*s,p.y-24*s,68*s,48*s);ctx.fillStyle="#102a43";ctx.fillRect(p.x-42*s,p.y-40*s,84*s,16*s);ctx.fillStyle="#ad6b19";ctx.fillRect(p.x-20*s,p.y-12*s,40*s,28*s);const cells=[["brood",h.brood,"#f97316"],["honey",clamp(h.stored/h.threshold),"#f2c94c"],["pollen",clamp(h.pollen/180),"#22c55e"]];cells.forEach((c,i)=>{ctx.fillStyle="#e5e7eb";ctx.fillRect(p.x-28*s+i*19*s,p.y+25*s,16*s,7*s);ctx.fillStyle=c[2];ctx.fillRect(p.x-28*s+i*19*s,p.y+25*s,16*s*c[1],7*s)});ctx.fillStyle="#111827";ctx.font=`${Math.max(10,12*s)}px monospace`;ctx.textAlign="center";ctx.fillText(h.name,p.x,p.y-48*s)}}
+function drawPallets(){for(const q of state.pallets){const p=w2s(q),s=Math.max(.55,state.zoom*state.pxM);ctx.fillStyle="#f0ad1f";ctx.strokeStyle="#4e2d05";ctx.fillRect(p.x-9*s,p.y-9*s,18*s,18*s);ctx.strokeRect(p.x-9*s,p.y-9*s,18*s,18*s);ctx.fillStyle="#4e2d05";ctx.font=`${Math.max(9,10*s)}px monospace`;ctx.textAlign="center";ctx.fillText("H",p.x,p.y+3*s)}}
+function drawBees(){for(const b of state.bees){if(!b.alive)continue;const p=w2s(b),s=Math.max(.45,state.zoom*state.pxM*.85),a=Math.atan2(b.vy,b.vx),col=KIND[b.kind].color;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(a);ctx.fillStyle=col;ctx.strokeStyle="#111";ctx.beginPath();ctx.ellipse(0,0,5.5*s,3*s,0,0,TAU);ctx.fill();ctx.stroke();ctx.strokeStyle="#111";ctx.beginPath();ctx.moveTo(-2*s,-3*s);ctx.lineTo(-2*s,3*s);ctx.moveTo(2*s,-3*s);ctx.lineTo(2*s,3*s);ctx.stroke();const flap=Math.sin(b.wing)*2*s;ctx.fillStyle="rgba(255,255,255,.45)";ctx.beginPath();ctx.ellipse(-1*s,-5*s-flap,5*s,2*s,-.2,0,TAU);ctx.fill();ctx.beginPath();ctx.ellipse(-1*s,5*s+flap,5*s,2*s,.2,0,TAU);ctx.fill();ctx.restore()}}
+function drawPredators(){for(const p0 of state.predators){const p=w2s(p0),s=Math.max(.75,state.zoom*state.pxM*.95),k=KIND[p0.kind];ctx.save();ctx.globalAlpha=.18;ctx.strokeStyle=k.color;ctx.lineWidth=1;ctx.beginPath();ctx.arc(p.x,p.y,p0.detection_radius*state.zoom*state.pxM,0,TAU);ctx.stroke();ctx.restore();if(p0.web){const w=w2s({x:p0.web.x,y:p0.web.y});ctx.strokeStyle="rgba(88,28,135,.55)";ctx.lineWidth=2;ctx.beginPath();ctx.arc(w.x,w.y,p0.web.radius*state.zoom*state.pxM,0,TAU);ctx.stroke();for(let i=0;i<8;i++){const a=TAU*i/8;ctx.beginPath();ctx.moveTo(w.x,w.y);ctx.lineTo(w.x+Math.cos(a)*p0.web.radius*state.zoom*state.pxM,w.y+Math.sin(a)*p0.web.radius*state.zoom*state.pxM);ctx.stroke()}}ctx.fillStyle=k.color;ctx.strokeStyle="#111";ctx.lineWidth=1.5;if(["swallow","swift","bee_eater","woodpecker","tit"].includes(p0.kind)){ctx.beginPath();ctx.moveTo(p.x,p.y-8*s);ctx.lineTo(p.x+11*s,p.y+7*s);ctx.lineTo(p.x,p.y+3*s);ctx.lineTo(p.x-11*s,p.y+7*s);ctx.closePath();ctx.fill();ctx.stroke()}else if(p0.kind==="spider"){ctx.beginPath();ctx.arc(p.x,p.y,5*s,0,TAU);ctx.fill();ctx.stroke();for(let i=0;i<8;i++){const a=TAU*i/8;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+Math.cos(a)*9*s,p.y+Math.sin(a)*9*s);ctx.stroke()}}else{ctx.beginPath();ctx.ellipse(p.x,p.y,7*s,4*s,Math.atan2(p0.vy,p0.vx),0,TAU);ctx.fill();ctx.stroke()}if(state.zoom>.8){ctx.fillStyle="#111827";ctx.font="9px monospace";ctx.textAlign="center";ctx.fillText(p0.state,p.x,p.y-12*s)}}}
+function drawAnts(){ctx.strokeStyle="rgba(124,45,18,.22)";for(const n of state.antNests){for(const ph of n.pheromones){const a=w2s(n),b=w2s(ph);ctx.globalAlpha=clamp(ph.strength*.25);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}ctx.globalAlpha=1;const p=w2s(n);ctx.fillStyle="#7c2d12";ctx.beginPath();ctx.arc(p.x,p.y,8*state.zoom*state.pxM+4,0,TAU);ctx.fill();ctx.fillStyle="#fff";ctx.font="10px monospace";ctx.textAlign="center";ctx.fillText("A",p.x,p.y+3)}ctx.globalAlpha=1;for(const a0 of state.ants){const p=w2s(a0),s=Math.max(.45,state.zoom*state.pxM*.7);ctx.fillStyle="#7c2d12";ctx.beginPath();ctx.ellipse(p.x,p.y,3.5*s,2*s,Math.atan2(a0.vy,a0.vx),0,TAU);ctx.fill()}}
+function drawCaterpillars(){for(const c of state.caterpillars){const p=w2s(c),s=Math.max(.5,state.zoom*state.pxM*.85);ctx.fillStyle="#65a30d";ctx.strokeStyle="#365314";ctx.lineWidth=1;for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(p.x-i*3*s,p.y,2.8*s,0,TAU);ctx.fill();ctx.stroke()}}}
+function drawRoutes(){ctx.save();ctx.globalAlpha=.05;ctx.strokeStyle="#111827";ctx.lineWidth=1;for(const b of state.bees.slice(0,150)){const p=w2s(b),t=w2s({x:b.targetX,y:b.targetY});ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(t.x,t.y);ctx.stroke()}ctx.restore()}
+function draw(){ctx.clearRect(0,0,screen().width,screen().height);drawBackground();drawFields();drawRoutes();drawHives();drawPallets();drawAnts();drawCaterpillars();drawBees();drawPredators()}
+function metricRow(label,val,frac){return `<div class="row"><span>${label}</span><span>${val}</span></div><div class="bar"><div style="width:${clamp(frac)*100}%"></div></div>`}
+function avgLeafHealth(){return state.fields.reduce((a,f)=>a+f.leafHealth,0)/Math.max(1,state.fields.length)}
+function avgRoute(){let total=0,n=0;for(const b of state.bees){if(!b.alive)continue;total+=Math.hypot(b.x-nearestHive(b.hive).x,b.y-nearestHive(b.hive).y);n++}return total/Math.max(1,n)}
+function updateHud(){const predCount=Object.values(state.predatorCounts).reduce((a,b)=>a+b,0);hud.innerHTML=`<b>Janus CoRT60 Predator + Competitor Ecology</b><br>scale ${state.worldM} m world · ${state.pxM.toFixed(2)} px/m · month ${state.month} · climate ${climate().name}<br>bees ${state.bees.length} · hives ${state.hives.length} · fields ${state.fields.length} · predators ${predCount} · ants ${state.ants.length} · caterpillars ${state.caterpillars.length}<br>stores: honey ${state.stats.honey.toFixed(1)} L · pollen ${state.stats.pollen.toFixed(1)} · brood ${state.stats.brood.toFixed(2)} · health ${state.stats.health.toFixed(2)}<br>pressure: alarm ${state.stats.alarm.toFixed(2)} · leaf health ${avgLeafHealth().toFixed(2)} · avg bee route ${avgRoute().toFixed(0)} m · disease ${diseasePressure().toFixed(2)}`;
+ kpis.innerHTML=[["Honey",state.stats.honey.toFixed(1)+"L"],["Alarm",state.stats.alarm.toFixed(2)],["Leaf",avgLeafHealth().toFixed(2)],["Losses",state.stats.beeLosses]].map(x=>`<div><b>${x[1]}</b>${x[0]}</div>`).join("");
+ metricsEl.innerHTML=
+ metricRow("Weather forage",weatherFactor().toFixed(2),weatherFactor())+
+ metricRow("Season nectar flow",seasonFactor().toFixed(2),seasonFactor())+
+ metricRow("Disease pressure",diseasePressure().toFixed(2),diseasePressure())+
+ metricRow("Hive health",state.stats.health.toFixed(2),state.stats.health)+
+ metricRow("Brood/reproduction",state.stats.brood.toFixed(2),state.stats.brood)+
+ metricRow("Leaf/flower health",avgLeafHealth().toFixed(2),avgLeafHealth())+
+ metricRow("Ant competition",`${state.stats.antRaids.toFixed(1)} honey raid / ${state.stats.antFlowerTheft.toFixed(1)} flower theft`,clamp((state.stats.antRaids+state.stats.antFlowerTheft)/80))+
+ metricRow("Caterpillar damage",state.stats.leafDamage.toFixed(2),clamp(state.stats.leafDamage/20))+
+ metricRow("Predator captures",`${state.stats.waspSteals} wasp · ${state.stats.hornetRaids} hornet · ${state.stats.birdHits} bird · ${state.stats.spiderTraps} spider`,clamp((state.stats.birdHits+state.stats.spiderTraps+state.stats.hornetRaids)/60));
+}
+function buildLegend(){const rows=[];for(const k of ["honey_bee","bumblebee","mason_bee","leafcutter_bee","wild_solitary","wasp","hornet","spider","swallow","swift","bee_eater","woodpecker","tit","ant","caterpillar"]){const v=KIND[k];rows.push(`<div class="legend"><span class="ico" style="background:${v.color}22;color:${v.color}">${v.icon}</span><span>${v.label}</span><span class="small">${k}</span></div>`)}rows.push(`<h3>Flowers / forage</h3>`);for(const [k,v] of Object.entries(PLANTS)){rows.push(`<div class="legend"><span class="ico" style="background:${v.color}22;color:${v.color}">${v.icon}</span><span>${v.label}</span><span class="small">nectar ${v.nectar.toFixed(2)} pollen ${v.pollen.toFixed(2)}</span></div>`)}legendEl.innerHTML=rows.join("")}
+function buildCort(){const root=document.getElementById("cortGroups");root.innerHTML="";for(const [group,tools] of Object.entries(CORT)){const d=document.createElement("details");d.open=false;const s=document.createElement("summary");s.textContent=group;d.appendChild(s);const g=document.createElement("div");g.className="toolgrid";for(const tool of tools){const b=document.createElement("button");b.className="tool"+(state.selectedCort.has(tool)?" sel":"");b.textContent=tool;b.onclick=()=>{if(state.selectedCort.has(tool))state.selectedCort.delete(tool);else state.selectedCort.add(tool);buildCort()};g.appendChild(b)}d.appendChild(g);root.appendChild(d)}}
+function syncLabels(){const pairs={
+ worldMVal:state.worldM,pxMVal:state.pxM.toFixed(2),gridMVal:state.gridM,rulerMVal:state.rulerM,
+ beesVal:state.beesRequested,hivesVal:state.hivesRequested,fieldsVal:state.fieldsRequested,speedVal:state.daysPerSecond.toFixed(2),popVal:state.population.toLocaleString(),hiveRadiusVal:state.hiveRadius,monthVal:state.month,
+ tempVal:state.weather.temp.toFixed(1),rainVal:state.weather.rain.toFixed(2),humidityVal:state.weather.humidity.toFixed(2),windVal:state.weather.wind.toFixed(2),lightVal:state.weather.light.toFixed(2),waterVal:state.weather.water.toFixed(2),
+ varroaVal:state.disease.varroa.toFixed(2),nosemaVal:state.disease.nosema.toFixed(2),foulbroodVal:state.disease.foulbrood.toFixed(2),pesticideVal:state.disease.pesticide.toFixed(2),
+ queenVal:state.colony.queen.toFixed(2),broodVal:state.colony.broodCap.toFixed(2),guardsVal:state.colony.guards.toFixed(2),shelterVal:state.colony.shelter.toFixed(2),
+ waspsVal:state.predatorCounts.wasp,hornetsVal:state.predatorCounts.hornet,spidersVal:state.predatorCounts.spider,swallowsVal:state.predatorCounts.swallow,swiftsVal:state.predatorCounts.swift,beeEatersVal:state.predatorCounts.bee_eater,woodpeckersVal:state.predatorCounts.woodpecker,titsVal:state.predatorCounts.tit,
+ predSpeedVal:state.predatorConfig.speed.toFixed(2),predDetectVal:state.predatorConfig.detection.toFixed(2),predAttackVal:state.predatorConfig.attack.toFixed(2),predMemoryVal:state.predatorConfig.memory.toFixed(2),predFearVal:state.predatorConfig.fear.toFixed(2),predTerritoryVal:state.predatorConfig.territory.toFixed(2),
+ antsVal:state.competitors.ants,antNestsVal:state.competitors.antNests,caterpillarsVal:state.competitors.caterpillars,otherHivesVal:state.competitors.otherHives,
+ antPheromoneVal:state.antConfig.pheromone.toFixed(2),antEvapVal:state.antConfig.evap.toFixed(2),antRaidVal:state.antConfig.raid.toFixed(2),antFlowerVal:state.antConfig.flower.toFixed(2),
+ catFeedVal:state.caterpillarConfig.feed.toFixed(2),catSpreadVal:state.caterpillarConfig.spread.toFixed(2),catFlowerDamageVal:state.caterpillarConfig.flowerDamage.toFixed(2),plantRecoveryVal:state.caterpillarConfig.recovery.toFixed(2),
+ sunVal:state.thinkers.sun.toFixed(2),kautilyaVal:state.thinkers.kautilya.toFixed(2),hannibalVal:state.thinkers.hannibal.toFixed(2),alexanderVal:state.thinkers.alexander.toFixed(2),caesarVal:state.thinkers.caesar.toFixed(2),scipioVal:state.thinkers.scipio.toFixed(2),xenophonVal:state.thinkers.xenophon.toFixed(2),vegetiusVal:state.thinkers.vegetius.toFixed(2),zhugeVal:state.thinkers.zhuge.toFixed(2)};
+ for(const [id,v] of Object.entries(pairs)){const e=document.getElementById(id);if(e)e.textContent=v}
+ document.getElementById("pauseBtn").textContent=state.paused?"Resume":"Pause";
+}
+function bindRange(id,obj,key,reset=false){document.getElementById(id).oninput=e=>{obj[key]=Number(e.target.value);syncLabels();if(reset)resetWorld()}}
+function bindPredCount(id,key){document.getElementById(id).oninput=e=>{state.predatorCounts[key]=Number(e.target.value);syncLabels();resetWorld()}}
+function syncControls(){const vals=[
+ ["worldMRange",state.worldM],["pxMRange",state.pxM],["gridMRange",state.gridM],["rulerMRange",state.rulerM],["beesRange",state.beesRequested],["hivesRange",state.hivesRequested],["fieldsRange",state.fieldsRequested],["speedRange",state.daysPerSecond],["popRange",state.population],["hiveRadiusRange",state.hiveRadius],["monthRange",state.month],
+ ["tempRange",state.weather.temp],["rainRange",state.weather.rain],["humidityRange",state.weather.humidity],["windRange",state.weather.wind],["lightRange",state.weather.light],["waterRange",state.weather.water],
+ ["varroaRange",state.disease.varroa],["nosemaRange",state.disease.nosema],["foulbroodRange",state.disease.foulbrood],["pesticideRange",state.disease.pesticide],
+ ["queenRange",state.colony.queen],["broodRange",state.colony.broodCap],["guardsRange",state.colony.guards],["shelterRange",state.colony.shelter],
+ ["waspsRange",state.predatorCounts.wasp],["hornetsRange",state.predatorCounts.hornet],["spidersRange",state.predatorCounts.spider],["swallowsRange",state.predatorCounts.swallow],["swiftsRange",state.predatorCounts.swift],["beeEatersRange",state.predatorCounts.bee_eater],["woodpeckersRange",state.predatorCounts.woodpecker],["titsRange",state.predatorCounts.tit],
+ ["predSpeedRange",state.predatorConfig.speed],["predDetectRange",state.predatorConfig.detection],["predAttackRange",state.predatorConfig.attack],["predMemoryRange",state.predatorConfig.memory],["predFearRange",state.predatorConfig.fear],["predTerritoryRange",state.predatorConfig.territory],
+ ["antsRange",state.competitors.ants],["antNestsRange",state.competitors.antNests],["caterpillarsRange",state.competitors.caterpillars],["otherHivesRange",state.competitors.otherHives],
+ ["antPheromoneRange",state.antConfig.pheromone],["antEvapRange",state.antConfig.evap],["antRaidRange",state.antConfig.raid],["antFlowerRange",state.antConfig.flower],
+ ["catFeedRange",state.caterpillarConfig.feed],["catSpreadRange",state.caterpillarConfig.spread],["catFlowerDamageRange",state.caterpillarConfig.flowerDamage],["plantRecoveryRange",state.caterpillarConfig.recovery],
+ ["sunRange",state.thinkers.sun],["kautilyaRange",state.thinkers.kautilya],["hannibalRange",state.thinkers.hannibal],["alexanderRange",state.thinkers.alexander],["caesarRange",state.thinkers.caesar],["scipioRange",state.thinkers.scipio],["xenophonRange",state.thinkers.xenophon],["vegetiusRange",state.thinkers.vegetius],["zhugeRange",state.thinkers.zhuge]];
+ for(const [id,v] of vals){const e=document.getElementById(id);if(e)e.value=v}document.getElementById("scaleSelect").value=state.scale;document.getElementById("scalePreset").value=state.scalePreset;document.getElementById("climateSelect").value=state.climate;document.getElementById("hemiSelect").value=state.hemi;syncLabels();buildCort()}
+function applyScalePreset(p){state.scalePreset=p;if(p==="garden"){state.worldM=250;state.pxM=1.2;state.gridM=25;state.rulerM=50;state.hiveRadius=180}if(p==="apiary"){state.worldM=750;state.pxM=.55;state.gridM=50;state.rulerM=100;state.hiveRadius=450}if(p==="farm"){state.worldM=1500;state.pxM=.28;state.gridM=100;state.rulerM=250;state.hiveRadius=850}if(p==="wild"){state.worldM=3000;state.pxM=.14;state.gridM=250;state.rulerM=500;state.hiveRadius=1400;state.fieldsRequested=72}syncControls();resetWorld()}
+function applyClimate(key){state.climate=key;const c=climate();state.weather.temp=c.temp;state.weather.rain=c.rain;state.weather.humidity=c.humidity;state.weather.wind=c.wind;state.weather.water=c.water;syncControls();resetWorld()}
+function download(url,name){const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove()}
+function snapshot(){download(canvas.toDataURL("image/png"),`janus_predator_competitor_ecology_${Date.now()}.png`)}
+function saveState(){const data=JSON.stringify({...state,selectedCort:[...state.selectedCort]},null,2);download(URL.createObjectURL(new Blob([data],{type:"application/json"})),`janus_predator_competitor_state_${Date.now()}.json`)}
+async function loadState(file){const data=JSON.parse(await file.text());if(Array.isArray(data.selectedCort))data.selectedCort=new Set(data.selectedCort);Object.assign(state,data);syncControls();resetWorld()}
+function initControls(){
+ const cs=document.getElementById("climateSelect");cs.innerHTML=Object.entries(CLIMATES).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join("");
+ document.getElementById("scalePreset").onchange=e=>applyScalePreset(e.target.value);
+ document.getElementById("climateSelect").onchange=e=>applyClimate(e.target.value);
+ document.getElementById("scaleSelect").onchange=e=>{state.scale=e.target.value;resetWorld()};
+ document.getElementById("hemiSelect").onchange=e=>{state.hemi=e.target.value;resetWorld()};
+ document.getElementById("pauseBtn").onclick=()=>{state.paused=!state.paused;syncLabels()};
+ document.getElementById("resetBtn").onclick=resetWorld;document.getElementById("snapshotBtn").onclick=snapshot;document.getElementById("saveBtn").onclick=saveState;document.getElementById("loadFile").onchange=e=>{const f=e.target.files?.[0];if(f)loadState(f)};
+ bindRange("worldMRange",state,"worldM",true);bindRange("pxMRange",state,"pxM");bindRange("gridMRange",state,"gridM");bindRange("rulerMRange",state,"rulerM");
+ bindRange("beesRange",state,"beesRequested",true);bindRange("hivesRange",state,"hivesRequested",true);bindRange("fieldsRange",state,"fieldsRequested",true);bindRange("speedRange",state,"daysPerSecond");bindRange("popRange",state,"population",true);bindRange("hiveRadiusRange",state,"hiveRadius",true);bindRange("monthRange",state,"month");
+ for(const [id,key] of [["tempRange","temp"],["rainRange","rain"],["humidityRange","humidity"],["windRange","wind"],["lightRange","light"],["waterRange","water"]])bindRange(id,state.weather,key);
+ for(const [id,key] of [["varroaRange","varroa"],["nosemaRange","nosema"],["foulbroodRange","foulbrood"],["pesticideRange","pesticide"]])bindRange(id,state.disease,key);
+ for(const [id,key] of [["queenRange","queen"],["broodRange","broodCap"],["guardsRange","guards"],["shelterRange","shelter"]])bindRange(id,state.colony,key);
+ for(const [id,key] of [["waspsRange","wasp"],["hornetsRange","hornet"],["spidersRange","spider"],["swallowsRange","swallow"],["swiftsRange","swift"],["beeEatersRange","bee_eater"],["woodpeckersRange","woodpecker"],["titsRange","tit"]])bindPredCount(id,key);
+ for(const [id,key] of [["predSpeedRange","speed"],["predDetectRange","detection"],["predAttackRange","attack"],["predMemoryRange","memory"],["predFearRange","fear"],["predTerritoryRange","territory"]])bindRange(id,state.predatorConfig,key,true);
+ for(const [id,key] of [["antsRange","ants"],["antNestsRange","antNests"],["caterpillarsRange","caterpillars"],["otherHivesRange","otherHives"]])bindRange(id,state.competitors,key,true);
+ for(const [id,key] of [["antPheromoneRange","pheromone"],["antEvapRange","evap"],["antRaidRange","raid"],["antFlowerRange","flower"]])bindRange(id,state.antConfig,key);
+ for(const [id,key] of [["catFeedRange","feed"],["catSpreadRange","spread"],["catFlowerDamageRange","flowerDamage"],["plantRecoveryRange","recovery"]])bindRange(id,state.caterpillarConfig,key);
+ for(const [id,key] of [["sunRange","sun"],["kautilyaRange","kautilya"],["hannibalRange","hannibal"],["alexanderRange","alexander"],["caesarRange","caesar"],["scipioRange","scipio"],["xenophonRange","xenophon"],["vegetiusRange","vegetius"],["zhugeRange","zhuge"]])bindRange(id,state.thinkers,key,true);
+ document.getElementById("selectAllCort").onclick=()=>{state.selectedCort=new Set(Object.values(CORT).flat());buildCort()};
+ document.getElementById("clearCort").onclick=()=>{state.selectedCort.clear();buildCort()};
+ document.getElementById("coreCort").onclick=()=>{state.selectedCort=new Set(["APC","FIP","CAF","C&S","Planning","Challenge","AGO","OPV"]);buildCort()};
+ canvas.onwheel=e=>{e.preventDefault();state.zoom=clamp(state.zoom*(e.deltaY<0?1.1:.9),.2,8)};
+ canvas.onmousedown=e=>{state.drag=true;state.dx=e.clientX;state.dy=e.clientY};
+ addEventListener("mouseup",()=>state.drag=false);
+ addEventListener("mousemove",e=>{if(state.drag){state.panX+=(e.clientX-state.dx)/(state.zoom*state.pxM);state.panY+=(e.clientY-state.dy)/(state.zoom*state.pxM);state.dx=e.clientX;state.dy=e.clientY}});
+ addEventListener("keydown",e=>{if(e.code==="Space"){state.paused=!state.paused;syncLabels()}if(e.key.toLowerCase()==="r")resetWorld()});
+}
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!state.paused)update(dt,now);draw();updateHud();requestAnimationFrame(loop)}
+buildLegend();initControls();syncControls();resetWorld();requestAnimationFrame(loop);
+</script>
+</body>
+</html>
