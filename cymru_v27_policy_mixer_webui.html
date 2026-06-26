@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>🐉 Cymru v27 Policy Mixer — Computing Engineering Edition</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #0f172a;
+      --panel2: #09101d;
+      --card: rgba(255, 255, 255, 0.06);
+      --line: rgba(255, 255, 255, 0.14);
+      --text: #eef5ff;
+      --muted: #9fb1cd;
+      --gold: #f2c94c;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --violet: #a855f7;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(135deg, var(--bg), #03070d);
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', monospace;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      width: 100vw;
+      height: 100vh;
+      gap: 0;
+    }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      padding: 22px;
+      background: radial-gradient(circle at 20% 0, rgba(30,100,150,.1), transparent 60%);
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, rgba(15, 23, 42, .98), rgba(7, 11, 20, .98));
+      border-left: 1px solid var(--line);
+      overflow: auto;
+      padding: 14px;
+      max-height: 100vh;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: var(--gold);
+      margin: 0 0 6px 0;
+      text-shadow: 0 0 20px rgba(255, 200, 0, 0.2);
+      letter-spacing: 0.05em;
+    }
+
+    h2 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #dbeafe;
+      margin: 16px 0 8px 0;
+    }
+
+    h3 {
+      font-size: 12px;
+      color: #fef3c7;
+      margin: 10px 0 6px 0;
+    }
+
+    .small {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+
+    label {
+      display: block;
+      font-size: 11px;
+      color: #e2e8f0;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+
+    select, input[type=text], input[type=number], textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      font: inherit;
+      font-size: 11px;
+    }
+
+    option { color: #111827; }
+
+    button {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(242, 201, 76, 0.16);
+      border-color: rgba(242, 201, 76, 0.35);
+      color: #fff;
+      border-radius: 10px;
+      padding: 8px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: rgba(242, 201, 76, 0.28);
+      border-color: var(--gold);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, rgba(16, 37, 66, .9), rgba(7, 17, 31, .85));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .policy-card {
+      background: linear-gradient(135deg, rgba(20, 50, 90, .85), rgba(15, 30, 60, .75));
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .policy-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      margin: 0 0 8px 0;
+    }
+
+    .policy-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+      font-size: 11px;
+    }
+
+    .meta-item {
+      background: rgba(255, 255, 255, 0.06);
+      border-left: 2px solid var(--gold);
+      padding: 6px 8px;
+      border-radius: 4px;
+    }
+
+    .meta-label {
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+
+    .meta-value {
+      color: var(--gold);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .toggles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .toggle input[type=checkbox] {
+      cursor: pointer;
+      width: auto;
+    }
+
+    .output-panel {
+      background: rgba(10, 28, 58, .95);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 14px;
+      font-size: 11px;
+      max-height: 300px;
+      overflow: auto;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 6px;
+      align-items: center;
+      font-size: 11px;
+      margin: 5px 0;
+    }
+
+    .ico {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      font-size: 14px;
+    }
+
+    .pill {
+      display: inline-block;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 10px;
+      margin: 2px;
+      color: #cbd5e1;
+    }
+
+    .summary-stat {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 11px;
+      margin: 6px 0;
+    }
+
+    .stat-label {
+      color: var(--muted);
+    }
+
+    .stat-value {
+      color: var(--gold);
+      font-weight: 700;
+      text-align: right;
+    }
+
+    @media (max-width: 1200px) {
+      .container { grid-template-columns: 1fr; }
+      .sidebar { 
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 380px;
+        height: 100vh;
+        z-index: 10;
+        border-left: 1px solid var(--line);
+      }
+      .main { padding-right: 400px; }
+    }
+
+    .sync-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .sql-export, .cypher-export {
+      background: rgba(10, 28, 58, .85);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 12px;
+      font-size: 10px;
+      font-family: 'Courier New', monospace;
+      max-height: 250px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="main">
+    <div class="hero">
+      <h1>🐉 Cymru v27 Policy Mixer</h1>
+      <p class="small">Select policies, adjust parameters, synchronise SQL + Cypher exports. Computing & Engineering edition.</p>
+    </div>
+
+    <div id="policyDisplay"></div>
+
+    <div class="card">
+      <h2>📊 Combined Summary</h2>
+      <div id="summary"></div>
+    </div>
+
+    <div class="card">
+      <h2>🗄️ SQL Export (ACID)</h2>
+      <button onclick="copyToClipboard('sqlExport')">Copy SQL</button>
+      <div class="sql-export" id="sqlExport"></div>
+    </div>
+
+    <div class="card">
+      <h2>📜 Cypher Export (Neo4j)</h2>
+      <button onclick="copyToClipboard('cypherExport')">Copy Cypher</button>
+      <div class="cypher-export" id="cypherExport"></div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <h2>⚙️ Policy Selector</h2>
+
+    <div class="card">
+      <h3>🏛️ Select Policies</h3>
+      <label><input type="checkbox" id="cardiff" onchange="updateDisplay()" checked> ✅ Cardiff Education Digital Architecture</label>
+      <label><input type="checkbox" id="swansea" onchange="updateDisplay()" checked> ✅ Swansea Apprentices + Team Excellence</label>
+      <label><input type="checkbox" id="conwy" onchange="updateDisplay()" checked> ✅ Conwy Rural Weak-Signal Network</label>
+    </div>
+
+    <div class="card">
+      <h3>🎛️ Global Parameters</h3>
+      <label>Confidence threshold <span id="confVal">0.70</span></label>
+      <input type="range" id="confidence" min="0.3" max="0.95" step="0.05" value="0.70" oninput="updateDisplay()">
+
+      <label>Evidence threshold <span id="evVal">0.65</span></label>
+      <input type="range" id="evidence" min="0.3" max="0.95" step="0.05" value="0.65" oninput="updateDisplay()">
+
+      <label>Timeline (days) <span id="tlVal">90</span></label>
+      <input type="range" id="timeline" min="30" max="365" step="15" value="90" oninput="updateDisplay()">
+    </div>
+
+    <div class="card">
+      <h3>💷 Budget Options</h3>
+      <label>Scale factor <span id="scaleVal">1.0x</span></label>
+      <input type="range" id="scale" min="0.5" max="2.5" step="0.1" value="1.0" oninput="updateDisplay()">
+
+      <label>Apply inflation <span id="infVal">0%</span></label>
+      <input type="range" id="inflation" min="0" max="20" step="1" value="0" oninput="updateDisplay()">
+    </div>
+
+    <div class="card">
+      <h3>🎩 De Bono Hat Focus</h3>
+      <select id="hat" onchange="updateDisplay()">
+        <option value="white">⚪ White (Facts)</option>
+        <option value="red">🔴 Red (Emotion)</option>
+        <option value="black">⚫ Black (Critical)</option>
+        <option value="yellow">🟡 Yellow (Optimism)</option>
+        <option value="green">🟢 Green (Creativity)</option>
+        <option value="blue">🔵 Blue (Process)</option>
+        <option value="purple">🟣 Purple (Strategy)</option>
+        <option value="pink">🩷 Pink (Empathy)</option>
+        <option value="brown">🟫 Brown (Heritage)</option>
+        <option value="silver" selected>⚙️ Silver (Systems)</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h3>🧬 Primary Harmonic</h3>
+      <select id="harmonic" onchange="updateDisplay()">
+        <option value="">All active</option>
+        <option value="hive_learning">🐝 Hive Learning</option>
+        <option value="ant_trails">🐜 Ant Trails</option>
+        <option value="team_excellence">🦁 Team Excellence</option>
+        <option value="weak_signal">🐭 Weak Signal</option>
+        <option value="enterprise">🏭 Enterprise</option>
+        <option value="edge_ai">🤖 Edge-AI Ethics</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h3>🏛️ Authority Focus</h3>
+      <select id="authority" onchange="updateDisplay()">
+        <option value="">All authorities</option>
+        <option value="cardiff" selected>Cardiff</option>
+        <option value="swansea">Swansea</option>
+        <option value="conwy">Conwy</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h3>📋 Export Format</h3>
+      <label><input type="checkbox" id="json" checked> JSON payload</label>
+      <label><input type="checkbox" id="csv" checked> CSV tables</label>
+      <label><input type="checkbox" id="graph" checked> Graph (Cypher)</label>
+      <label><input type="checkbox" id="sql" checked> SQL (ACID)</label>
+    </div>
+
+    <button onclick="generateAll()">⚡ Generate All Exports</button>
+    <button onclick="downloadJSON()">💾 Download JSON</button>
+    <button onclick="downloadSQL()">💾 Download SQL</button>
+    <button onclick="downloadCypher()">💾 Download Cypher</button>
+    <button onclick="resetAll()">🔄 Reset</button>
+  </div>
+</div>
+
+<script>
+const POLICIES = {
+  cardiff: {
+    id: 'CARDIFF_EDUCATION_DIGITAL_ARCH_001',
+    title: '🏛️ Cardiff School-to-SPACE Digital Architecture Lab',
+    authority: 'Cardiff',
+    domain: 'education',
+    primary_harmonic: 'hive_learning',
+    budget: 1100000.00,
+    timeline_days: 90,
+    apprentices: 120,
+    students: 1200,
+    expected_jobs: 40,
+    de_bono_hats: ['white', 'silver', 'yellow', 'black', 'pink'],
+    european_principles: ['transparency', 'performance'],
+    procedures: ['standard'],
+    confidence: 0.78,
+    evidence_threshold: 0.72,
+    roi_factor: 6.2,
+  },
+  swansea: {
+    id: 'SWANSEA_APPRENTICE_TEAM_SANDBOX_002',
+    title: '🏭 Swansea Computing Engineering Apprenticeship + FCA Fintech Sandbox',
+    authority: 'Swansea',
+    domain: 'apprenticeships',
+    primary_harmonic: 'team_excellence',
+    budget: 7268200.00,
+    timeline_days: 120,
+    apprentices: 240,
+    pods: 80,
+    expected_jobs: 192,
+    de_bono_hats: ['silver', 'white', 'black', 'gold', 'pink'],
+    european_principles: ['innovation', 'performance', 'solidarity'],
+    procedures: ['regulatory_sandbox'],
+    confidence: 0.82,
+    evidence_threshold: 0.68,
+    roi_factor: 3.8,
+  },
+  conwy: {
+    id: 'CONWY_COMPUTING_RURAL_RESILIENCE_003',
+    title: '🐭 Conwy Rural Computing Weak-Signal Early Warning Network',
+    authority: 'Conwy',
+    domain: 'apprenticeships',
+    primary_harmonic: 'weak_signal',
+    budget: 2918600.00,
+    timeline_days: 180,
+    apprentices: 120,
+    learning_hubs: 8,
+    youth_retention: 60,
+    de_bono_hats: ['pink', 'white', 'green', 'silver', 'grey'],
+    european_principles: ['subsidiarity', 'resilience', 'proportionality'],
+    procedures: ['standard'],
+    confidence: 0.76,
+    evidence_threshold: 0.64,
+    roi_factor: 7.4,
+  },
+};
+
+const HARMONICS = [
+  { id: 'hive_learning', name: 'Hive Learning', icon: '🐝' },
+  { id: 'ant_trails', name: 'Ant Trails', icon: '🐜' },
+  { id: 'weak_signal', name: 'Weak Signal', icon: '🐭' },
+  { id: 'team_excellence', name: 'Team Excellence', icon: '🦁' },
+  { id: 'enterprise', name: 'Enterprise', icon: '🏭' },
+  { id: 'space', name: 'SPACE Capability', icon: '🛰️' },
+  { id: 'resilience', name: 'Resilience', icon: '🛡️' },
+  { id: 'edge_ai', name: 'Edge-AI Ethics', icon: '🤖' },
+];
+
+function updateDisplay() {
+  const cardiff = document.getElementById('cardiff').checked;
+  const swansea = document.getElementById('swansea').checked;
+  const conwy = document.getElementById('conwy').checked;
+
+  const confVal = parseFloat(document.getElementById('confidence').value);
+  const evVal = parseFloat(document.getElementById('evidence').value);
+  const tlVal = parseInt(document.getElementById('timeline').value);
+  const scaleVal = parseFloat(document.getElementById('scale').value);
+  const infVal = parseInt(document.getElementById('inflation').value);
+  const authority = document.getElementById('authority').value;
+  const harmonic = document.getElementById('harmonic').value;
+  const hat = document.getElementById('hat').value;
+
+  document.getElementById('confVal').textContent = confVal.toFixed(2);
+  document.getElementById('evVal').textContent = evVal.toFixed(2);
+  document.getElementById('tlVal').textContent = tlVal;
+  document.getElementById('scaleVal').textContent = scaleVal.toFixed(1) + 'x';
+  document.getElementById('infVal').textContent = infVal + '%';
+
+  const selected = [];
+  if (cardiff && (!authority || authority === 'cardiff')) selected.push(POLICIES.cardiff);
+  if (swansea && (!authority || authority === 'swansea')) selected.push(POLICIES.swansea);
+  if (conwy && (!authority || authority === 'conwy')) selected.push(POLICIES.conwy);
+
+  const filtered = harmonic ? selected.filter(p => p.primary_harmonic === harmonic) : selected;
+
+  renderPolicies(filtered, scaleVal, infVal);
+  renderSummary(filtered, scaleVal, infVal);
+  generateExports(filtered, scaleVal, infVal, confVal, evVal, tlVal, hat);
+}
+
+function renderPolicies(policies, scale, inflation) {
+  const div = document.getElementById('policyDisplay');
+  div.innerHTML = policies.map(p => {
+    const scaledBudget = Math.round(p.budget * scale * (1 + inflation/100));
+    const scaledDays = Math.round(p.timeline_days * scale);
+    const scaledApps = Math.round(p.apprentices * scale);
+
+    return `
+      <div class="policy-card">
+        <div class="policy-title">${p.title}</div>
+        <div class="policy-meta">
+          <div class="meta-item">
+            <div class="meta-label">Authority</div>
+            <div class="meta-value">${p.authority}</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Budget (scaled)</div>
+            <div class="meta-value">£${(scaledBudget/1e6).toFixed(1)}m</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">Apprentices</div>
+            <div class="meta-value">${scaledApps}</div>
+          </div>
+        </div>
+        <div class="small"><b>ID:</b> ${p.id}</div>
+        <div class="small"><b>Domain:</b> ${p.domain}</div>
+        <div class="small"><b>Harmonic:</b> ${p.primary_harmonic}</div>
+        <div class="small" style="margin-top:8px;">
+          <b>De Bono hats:</b> ${p.de_bono_hats.map(h => `<span class="pill">${h}</span>`).join('')}
+        </div>
+        <div class="small" style="margin-top:8px;">
+          <b>EU Principles:</b> ${p.european_principles.map(pr => `<span class="pill">${pr}</span>`).join('')}
+        </div>
+        <div class="summary-stat">
+          <span class="stat-label">Timeline</span>
+          <span class="stat-value">${scaledDays} days</span>
+        </div>
+        <div class="summary-stat">
+          <span class="stat-label">ROI Factor</span>
+          <span class="stat-value">${p.roi_factor}x</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (policies.length === 0) {
+    div.innerHTML = '<div class="policy-card"><p class="small">No policies selected. Check the sidebar.</p></div>';
+  }
+}
+
+function renderSummary(policies, scale, inflation) {
+  const div = document.getElementById('summary');
+
+  const totalBudget = policies.reduce((s, p) => s + p.budget * scale * (1 + inflation/100), 0);
+  const totalApprentices = policies.reduce((s, p) => s + p.apprentices * scale, 0);
+  const avgConfidence = policies.length ? (policies.reduce((s, p) => s + p.confidence, 0) / policies.length) : 0;
+  const avgROI = policies.length ? (policies.reduce((s, p) => s + p.roi_factor, 0) / policies.length) : 0;
+  const totalExpectedJobs = policies.reduce((s, p) => s + p.expected_jobs * scale, 0);
+
+  div.innerHTML = `
+    <div class="summary-stat">
+      <span class="stat-label">Total Budget</span>
+      <span class="stat-value">£${(totalBudget/1e6).toFixed(1)}m</span>
+    </div>
+    <div class="summary-stat">
+      <span class="stat-label">Total Apprentices</span>
+      <span class="stat-value">${Math.round(totalApprentices)}</span>
+    </div>
+    <div class="summary-stat">
+      <span class="stat-label">Expected Jobs</span>
+      <span class="stat-value">${Math.round(totalExpectedJobs)}</span>
+    </div>
+    <div class="summary-stat">
+      <span class="stat-label">Avg Confidence</span>
+      <span class="stat-value">${(avgConfidence*100).toFixed(0)}%</span>
+    </div>
+    <div class="summary-stat">
+      <span class="stat-label">Avg ROI</span>
+      <span class="stat-value">${avgROI.toFixed(1)}x</span>
+    </div>
+    <div class="summary-stat">
+      <span class="stat-label">Policies Active</span>
+      <span class="stat-value">${policies.length}</span>
+    </div>
+  `;
+}
+
+function generateExports(policies, scale, inflation, conf, ev, tl, hat) {
+  const selectedJson = policies.map(p => ({
+    ...p,
+    scaled_budget: Math.round(p.budget * scale * (1 + inflation/100)),
+    scaled_timeline: Math.round(p.timeline_days * scale),
+    scaled_apprentices: Math.round(p.apprentices * scale),
+    de_bono_hat_focus: hat,
+    confidence_threshold: conf,
+    evidence_threshold: ev,
+  }));
+
+  generateSQL(selectedJson);
+  generateCypher(selectedJson);
+}
+
+function generateSQL(policies) {
+  const div = document.getElementById('sqlExport');
+  let sql = `-- Cymru v27 Policy Mixer Export
+-- Generated: ${new Date().toISOString()}
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+
+CREATE TABLE IF NOT EXISTS policy_context(
+  id TEXT PRIMARY KEY,
+  policy_id TEXT,
+  authority TEXT,
+  domain TEXT,
+  primary_harmonic TEXT,
+  budget REAL,
+  timeline_days INTEGER,
+  apprentices INTEGER,
+  confidence REAL,
+  evidence_threshold REAL,
+  de_bono_hat TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+`;
+
+  policies.forEach((p, i) => {
+    sql += `INSERT INTO policy_context VALUES(
+  'ctx_${p.id}_${i}',
+  '${p.id}',
+  '${p.authority}',
+  '${p.domain}',
+  '${p.primary_harmonic}',
+  ${p.scaled_budget},
+  ${p.scaled_timeline},
+  ${p.scaled_apprentices},
+  ${p.confidence},
+  ${p.evidence_threshold},
+  '${p.de_bono_hat_focus}',
+  CURRENT_TIMESTAMP
+);
+`;
+  });
+
+  sql += `\n-- Query: all active policies\nSELECT id, policy_id, authority, budget, apprentices, confidence FROM policy_context WHERE created_at = CURRENT_TIMESTAMP;`;
+
+  div.textContent = sql;
+}
+
+function generateCypher(policies) {
+  const div = document.getElementById('cypherExport');
+  let cypher = `// Cymru v27 Policy Mixer Export — Neo4j
+// Generated: ${new Date().toISOString()}
+
+CREATE CONSTRAINT policy_id IF NOT EXISTS FOR (p:PolicyContext) REQUIRE p.id IS UNIQUE;
+CREATE CONSTRAINT authority_id IF NOT EXISTS FOR (a:Authority) REQUIRE a.id IS UNIQUE;
+CREATE CONSTRAINT harmonic_id IF NOT EXISTS FOR (h:Harmonic) REQUIRE h.id IS UNIQUE;
+
+MERGE (cymru:Region {id: 'WALES'}) SET cymru.name = 'Wales', cymru.model = 'Cymru v27 Policy Mixer';
+
+`;
+
+  policies.forEach((p, i) => {
+    const pId = `${p.id}_${i}`;
+    cypher += `MERGE (p:PolicyContext {id: '${pId}'})
+SET p.policy_id = '${p.id}',
+    p.title = '${p.title.replace(/'/g, "\\'")}',
+    p.authority = '${p.authority}',
+    p.domain = '${p.domain}',
+    p.budget = ${p.scaled_budget},
+    p.timeline_days = ${p.scaled_timeline},
+    p.apprentices = ${p.scaled_apprentices},
+    p.confidence = ${p.confidence};
+
+MATCH (cymru:Region {id: 'WALES'}), (p:PolicyContext {id: '${pId}'})
+MERGE (p)-[:IN_REGION]->(cymru);
+
+`;
+
+    // Link to harmonic
+    cypher += `MERGE (h:Harmonic {id: '${p.primary_harmonic}'}) SET h.name = '${p.primary_harmonic}';
+MATCH (p:PolicyContext {id: '${pId}'}), (h:Harmonic {id: '${p.primary_harmonic}'})
+MERGE (p)-[:ACTIVATES]->(h);
+
+`;
+
+    // Link to authority
+    cypher += `MERGE (a:Authority {id: '${p.authority}'}) SET a.name = '${p.authority}';
+MATCH (p:PolicyContext {id: '${pId}'}), (a:Authority {id: '${p.authority}'})
+MERGE (p)-[:IN_AUTHORITY]->(a);
+
+`;
+  });
+
+  cypher += `// Final query: all policies and their relationships
+MATCH (p:PolicyContext)-[r:ACTIVATES|IN_AUTHORITY|IN_REGION]-(n) RETURN p, r, n LIMIT 100;
+`;
+
+  div.textContent = cypher;
+}
+
+function generateAll() {
+  updateDisplay();
+  alert('✅ All exports generated. Scroll down to view SQL and Cypher.');
+}
+
+function copyToClipboard(elementId) {
+  const el = document.getElementById(elementId);
+  const text = el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('✅ Copied to clipboard!');
+  });
+}
+
+function downloadJSON() {
+  const policies = Object.values(POLICIES).filter(p => {
+    if (document.getElementById('cardiff').checked && p.authority === 'Cardiff') return true;
+    if (document.getElementById('swansea').checked && p.authority === 'Swansea') return true;
+    if (document.getElementById('conwy').checked && p.authority === 'Conwy') return true;
+    return false;
+  });
+
+  const blob = new Blob([JSON.stringify(policies, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cymru_v27_policies.json';
+  a.click();
+}
+
+function downloadSQL() {
+  const sql = document.getElementById('sqlExport').textContent;
+  const blob = new Blob([sql], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cymru_v27_policies.sql';
+  a.click();
+}
+
+function downloadCypher() {
+  const cypher = document.getElementById('cypherExport').textContent;
+  const blob = new Blob([cypher], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'cymru_v27_policies.cypher';
+  a.click();
+}
+
+function resetAll() {
+  document.getElementById('cardiff').checked = true;
+  document.getElementById('swansea').checked = true;
+  document.getElementById('conwy').checked = true;
+  document.getElementById('confidence').value = 0.70;
+  document.getElementById('evidence').value = 0.65;
+  document.getElementById('timeline').value = 90;
+  document.getElementById('scale').value = 1.0;
+  document.getElementById('inflation').value = 0;
+  document.getElementById('hat').value = 'silver';
+  document.getElementById('authority').value = '';
+  document.getElementById('harmonic').value = '';
+  updateDisplay();
+}
+
+// Initialize on load
+window.addEventListener('load', () => {
+  updateDisplay();
+});
+</script>
+
+</body>
+</html>
